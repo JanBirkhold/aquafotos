@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-aqua-50: #ecfeff;
+  --color-aqua-100: #cffafe;
+  --color-aqua-200: #a5f3fc;
+  --color-aqua-300: #67e8f9;
+  --color-aqua-400: #22d3ee;
+  --color-aqua-500: #00a19a;
+  --color-aqua-600: #0891b2;
+  --color-aqua-700: #0e7490;
+  --color-aqua-800: #155e75;
+  --color-aqua-900: #164e63;
+  --color-aqua-950: #0a2a33;
+  --color-sand-50: #faf8f5;
+  --color-sand-100: #f5f0e8;
+  --color-sand-200: #e8dfd0;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), ui-serif, Georgia, serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-sand-50 text-slate-800 antialiased;
+  }
+
+  ::selection {
+    @apply bg-aqua-200 text-aqua-900;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply border border-white/30 bg-white/60 backdrop-blur-xl;
+  }
+
+  .glass-dark {
+    @apply border border-white/10 bg-aqua-900/40 backdrop-blur-xl;
+  }
+
+  .text-gradient-aqua {
+    @apply bg-gradient-to-r from-aqua-500 via-aqua-600 to-aqua-800 bg-clip-text text-transparent;
+  }
+
+  .section-padding {
+    @apply px-4 py-16 sm:px-6 lg:px-8 lg:py-24;
+  }
+
+  .water-shimmer {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0) 50%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+  }
+}
