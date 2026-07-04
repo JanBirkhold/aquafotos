@@ -1,48 +1,34 @@
-# AquaFotos – Unterwasserfotografie Barntrup
+# AquaFotos 2.0 – Enterprise Fotografie-Plattform
 # https://aquafotos.com
 
-> AquaFotos ist ein Spezialist für professionelle Unterwasserfotografie in Barntrup,
-> Kreis Lippe und Ostwestfalen-Lippe (OWL). Angeboten werden Unterwasser-Fotoshootings
-> für Kinder, Familien, Veranstaltungen und WeihnachtsMinis.
+> Premium Unterwasser-, Kita-, Baby- und Familienfotografie mit digitalem
+> Shooting-Management, QR-Workflow, Shop und CRM in Ostwestfalen.
 
-## Unternehmen
+## Plattform-Funktionen
 
-- Name: AquaFotos
-- Standort: Barntrup, Nordrhein-Westfalen, Deutschland
-- Region: Lippe / OWL (Ostwestfalen-Lippe)
-- Telefon: +49 157 514 788 26
-- Website: https://aquafotos.com
+- Marketing-Website (Unterwasser, Kita, Baby, Familie, Aktionen)
+- Event-basierte Shootings (keine freien Kalenderbuchungen)
+- Teilnehmerverwaltung mit Warteliste
+- QR-Code Workflow für Fotografen
+- Kundengalerien mit Zugangscode
+- Shop mit Staffelpreisen (35€ / 25€ / 15€)
+- Admin-Dashboard (Umsatz, Auslastung, Bestellungen)
+- Partnerverwaltung (Schwimmbäder, Kitas, Hebammen)
+- E-Mail-Benachrichtigungen (Resend)
 
-## Leistungen
+## Wichtige URLs
 
-- Unterwasser-Shootings (Einzel & individuell)
-- Familien- und Kinder-Unterwasserfotografie
-- Veranstaltungsfotografie (Schulen, Events)
-- WeihnachtsMinis Barntrup
-- Online-Bestellung von Fotos mit Wasserzeichen-Vorschau
-- Hochauflösende Downloads nach Kauf (ohne Wasserzeichen)
-- Echtzeit-Überweisung mit schneller Bildzustellung
+- Start: https://aquafotos.com/
+- Shootings: https://aquafotos.com/shootings
+- Bilder bestellen: https://aquafotos.com/bilder-bestellen
+- Partner: https://aquafotos.com/partner
+- Kontakt: https://aquafotos.com/kontakt
+- Admin: https://aquafotos.com/admin
 
-## Wichtige Seiten
+## Tech Stack
 
-- Startseite: https://aquafotos.com/
-- Galerie: https://aquafotos.com/galerie
-- Angebote: https://aquafotos.com/angebote
-- Über uns: https://aquafotos.com/ueber-uns
-- Termin buchen: https://aquafotos.com/#termin
-- Veranstaltungen: https://aquafotos.com/veranstaltungen
-- Warenkorb: https://aquafotos.com/warenkorb
-- Login: https://aquafotos.com/login
-- Impressum: https://aquafotos.com/impressum
-- Datenschutz: https://aquafotos.com/datenschutz
+Next.js, TypeScript, PostgreSQL, Prisma, NextAuth, Tailwind, Stripe, Uploadthing, Resend
 
-## SEO Keywords
+## Standort
 
-Unterwasserfotografie Barntrup, Unterwasser Fotoshooting, Unterwasserfotos Kinder,
-Unterwasser Fotos Familie, Fotograf Barntrup, Fotostudio Lippe, AquaFotos,
-WeihnachtsMinis Barntrup, professionelle Unterwasserbilder, Fotoshooting OWL
-
-## Kontakt & Impressum
-
-Verantwortlicher: Kasimir Eckhardt
-Adresse: Mittelstr. 63, 32683 Barntrup, Deutschland
+Barntrup, Kreis Lippe, Ostwestfalen-Lippe (OWL), Deutschland

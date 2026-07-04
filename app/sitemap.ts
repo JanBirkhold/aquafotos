@@ -4,12 +4,17 @@ import { siteConfig } from "@/lib/site-config";
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
     "",
+    "/unterwasser",
+    "/kita",
+    "/baby",
+    "/familie",
+    "/aktionen",
+    "/shootings",
+    "/bilder-bestellen",
+    "/partner",
+    "/kontakt",
     "/galerie",
-    "/angebote",
     "/ueber-uns",
-    "/veranstaltungen",
-    "/warenkorb",
-    "/login",
     "/impressum",
     "/datenschutz",
   ];
@@ -17,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return routes.map((route) => ({
     url: `${siteConfig.url}${route}`,
     lastModified: new Date(),
-    changeFrequency: route === "" ? "weekly" : "monthly",
-    priority: route === "" ? 1 : route === "/galerie" || route === "/angebote" ? 0.9 : 0.7,
+    changeFrequency: route === "" || route === "/shootings" ? "weekly" : "monthly",
+    priority: route === "" ? 1 : route.startsWith("/shoot") ? 0.95 : 0.8,
   }));
 }

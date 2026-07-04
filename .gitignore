@@ -22,6 +22,7 @@
 .DS_Store
 *.pem
 *.pdf
+/public/uploads
 
 # duplicate source assets
 pictures/headerBG3 (1).webp

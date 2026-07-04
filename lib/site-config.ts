@@ -21,28 +21,36 @@ export const siteConfig = {
     name: "Annika Eckhardt",
     role: "Fotografin",
   },
+  tagline: "Erinnerungen, die bleiben.",
+  subline:
+    "Professionelle Unterwasser-, Kinder- und Familienfotografie in Ostwestfalen.",
   geo: {
     area: "Barntrup, Lippe, Ostwestfalen-Lippe (OWL)",
     keywords: [
       "Unterwasserfotografie Barntrup",
+      "Kinderfotograf Lippe",
+      "Kita Fotograf OWL",
+      "Babyfotograf Barntrup",
+      "Familienfotograf Lippe",
       "Unterwasser Fotoshooting",
-      "Unterwasserfotos Kinder",
-      "Unterwasser Fotos Familie",
-      "Fotograf Barntrup",
-      "Fotostudio Lippe",
       "AquaFotos",
       "WeihnachtsMinis Barntrup",
       "professionelle Unterwasserbilder",
       "Fotoshooting OWL",
     ],
   },
+  shootingNav: [
+    { label: "Unterwasser", href: "/unterwasser" },
+    { label: "Kita", href: "/kita" },
+    { label: "Baby", href: "/baby" },
+    { label: "Familie", href: "/familie" },
+    { label: "Aktionen", href: "/aktionen" },
+  ],
   nav: [
     { label: "Start", href: "/" },
-    { label: "Galerie", href: "/galerie" },
-    { label: "Angebote", href: "/angebote" },
-    { label: "Veranstaltungen", href: "/veranstaltungen" },
-    { label: "Rezensionen", href: "/#rezensionen" },
-    { label: "Warenkorb", href: "/warenkorb" },
+    { label: "Bilder bestellen", href: "/bilder-bestellen" },
+    { label: "Partner", href: "/partner" },
+    { label: "Kontakt", href: "/kontakt" },
   ],
 } as const;
 
@@ -60,3 +68,31 @@ export const galleryCategoryLabels: Record<GalleryCategory, string> = {
   events: "Events",
   weihnachtsminis: "WeihnachtsMinis",
 };
+
+export const heroSlides = [
+  {
+    src: "/images/hero/unterwasser.webp",
+    alt: "Unterwasser Baby – AquaFotos",
+    label: "Unterwasser",
+  },
+  {
+    src: "/images/hero/kinder.webp",
+    alt: "Kinderportrait – AquaFotos",
+    label: "Kinder",
+  },
+  {
+    src: "/images/hero/familie.webp",
+    alt: "Familienbild – AquaFotos",
+    label: "Familie",
+  },
+  {
+    src: "/images/hero/weihnachtsminis.webp",
+    alt: "WeihnachtsMini – AquaFotos",
+    label: "WeihnachtsMinis",
+  },
+  {
+    src: "/images/hero/paar.webp",
+    alt: "Paarshooting – AquaFotos",
+    label: "Paar",
+  },
+] as const;

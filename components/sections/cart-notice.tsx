@@ -25,7 +25,7 @@ export function CartNotice({ empty = true }: CartNoticeProps) {
           Veranstaltungsübersicht.
         </p>
         <Button asChild className="mt-6">
-          <Link href="/veranstaltungen">Zur Veranstaltungsübersicht</Link>
+          <Link href="/bilder-bestellen">Zur Galerie / Bilder bestellen</Link>
         </Button>
       </CardContent>
     </Card>
