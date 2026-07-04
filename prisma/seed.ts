@@ -117,6 +117,33 @@ async function main() {
     ],
   });
 
+  await prisma.voucherProduct.createMany({
+    data: [
+      {
+        title: "Unterwasser-Shooting Gutschein",
+        description:
+          "Ein emotionales Unterwasser-Erlebnis für Kinder oder Familien – inkl. Galerie-Zugang.",
+        priceCents: 8900,
+        shootingType: "UNDERWATER_CHILD",
+        sortOrder: 0,
+      },
+      {
+        title: "Baby-Shooting Gutschein",
+        description: "Zartes Baby- oder Meilenstein-Shooting – perfekt zum Verschenken.",
+        priceCents: 7900,
+        shootingType: "BABY_MILESTONE",
+        sortOrder: 1,
+      },
+      {
+        title: "Familien-Shooting Gutschein",
+        description: "Outdoor-Familienerinnerungen in OWL – mit Wunschtermin zur Anmeldung.",
+        priceCents: 9900,
+        shootingType: "FAMILY_OUTDOOR",
+        sortOrder: 2,
+      },
+    ],
+  });
+
   console.log("✅ Seed complete");
   console.log("   Admin:", admin.email, "/ admin123!");
   console.log("   Photographer:", photographer.email);

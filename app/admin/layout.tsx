@@ -6,6 +6,7 @@ import {
   Euro,
   Users,
   Bell,
+  Gift,
 } from "lucide-react";
 import { auth, isStaffRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -14,6 +15,7 @@ const adminNav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/shootings", label: "Shootings", icon: Camera },
   { href: "/admin/bestellungen", label: "Bestellungen", icon: ShoppingBag },
+  { href: "/admin/gutscheine", label: "Gutscheine", icon: Gift },
   { href: "/admin/preise", label: "Preise", icon: Euro },
   { href: "/admin/benachrichtigungen", label: "Benachrichtigungen", icon: Bell },
   { href: "/admin/partner", label: "Partner", icon: Users },

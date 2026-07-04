@@ -132,6 +132,39 @@ export function buildGalleryLinkBlock(galleryUrl: string): string {
   return `<p><a href="${galleryUrl}">Zur Galerie – Bilder ansehen und bestellen</a></p>`;
 }
 
+export function buildVoucherListBlock(
+  vouchers: {
+    code: string;
+    title: string;
+    preferredDate: string;
+    qrDataUrl: string | null;
+    redeemUrl: string;
+  }[],
+): string {
+  if (vouchers.length === 0) return "";
+
+  return vouchers
+    .map(
+      (v) => `<div style="margin:1.25em 0;padding:1em;border:1px solid #e2e8f0;border-radius:12px">
+<p><strong>${v.title}</strong></p>
+<p><strong>Code:</strong> <code style="font-size:1.05em;letter-spacing:0.05em">${v.code}</code></p>
+${v.preferredDate ? `<p><strong>Wunschtermin:</strong> ${v.preferredDate}</p>` : ""}
+${v.qrDataUrl ? `<p><img src="${v.qrDataUrl}" alt="QR-Code Gutschein ${v.code}" width="140" height="140" style="border:1px solid #e2e8f0;border-radius:8px" /></p>` : ""}
+<p><a href="${v.redeemUrl}">Gutschein einlösen</a></p>
+</div>`,
+    )
+    .join("");
+}
+
+export function buildVoucherRedeemGuideBlock(redeemUrl: string): string {
+  return `<p><strong>So lösen Sie den Gutschein ein:</strong></p>
+<ol>
+  <li><a href="${redeemUrl}">Einlöse-Seite öffnen</a> oder QR-Code scannen</li>
+  <li>Code eingeben und Anmeldedaten vervollständigen</li>
+  <li>Wir bestätigen Ihren Wunschtermin per E-Mail</li>
+</ol>`;
+}
+
 export function buildLocationLine(location?: string): string {
   return location ? ` in ${location}` : "";
 }

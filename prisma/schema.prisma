@@ -349,10 +349,12 @@ model IndividualShootingRequest {
   message      String?      @db.Text
   status       String       @default("PENDING")
   confirmedDate DateTime?    @db.Date
+  voucherId     String?      @unique
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  user User? @relation(fields: [userId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+  voucher Voucher? @relation(fields: [voucherId], references: [id])
 
   @@index([status])
 }
@@ -524,6 +526,86 @@ model OrderItem {
 
   @@index([orderId])
   @@index([status])
+}
+
+// ─── Gutscheine ──────────────────────────────────────────────────────
+
+enum VoucherStatus {
+  PENDING_PAYMENT
+  PAID
+  REDEEMED
+  EXPIRED
+  CANCELLED
+}
+
+model VoucherProduct {
+  id           String        @id @default(cuid())
+  title        String
+  description  String?       @db.Text
+  priceCents   Int
+  shootingType ShootingType?
+  sortOrder    Int           @default(0)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  cartItems VoucherCartItem[]
+  vouchers  Voucher[]
+}
+
+model VoucherCart {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items VoucherCartItem[]
+}
+
+model VoucherCartItem {
+  id              String    @id @default(cuid())
+  cartId          String
+  productId       String
+  recipientName   String?
+  preferredDate   DateTime? @db.Date
+  personalMessage String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  cart    VoucherCart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product VoucherProduct @relation(fields: [productId], references: [id])
+
+  @@index([cartId])
+}
+
+model Voucher {
+  id              String        @id @default(cuid())
+  purchaseNumber  String
+  code            String        @unique
+  qrPayload       String        @unique
+  qrDataUrl       String?       @db.Text
+  productId       String
+  buyerName       String
+  buyerEmail      String
+  recipientName   String?
+  preferredDate   DateTime?     @db.Date
+  personalMessage String?       @db.Text
+  priceCents      Int
+  status          VoucherStatus @default(PENDING_PAYMENT)
+  stripeSessionId String?
+  stripePaymentId String?
+  paidAt          DateTime?
+  redeemedAt      DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  product                 VoucherProduct           @relation(fields: [productId], references: [id])
+  individualShootingReq   IndividualShootingRequest?
+
+  @@index([purchaseNumber])
+  @@index([status])
+  @@index([buyerEmail])
 }
 
 // ─── E-Mail Vorlagen (Admin) ─────────────────────────────────────────

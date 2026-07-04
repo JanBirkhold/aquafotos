@@ -7,6 +7,7 @@ export const EMAIL_TEMPLATE_KEYS = {
   NEW_EVENT: "new_event",
   ORDER_CONFIRMATION: "order_confirmation",
   ORDER_READY: "order_ready",
+  VOUCHER_PURCHASE: "voucher_purchase",
 } as const;
 
 export type EmailTemplateKey =
@@ -157,6 +158,26 @@ export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
 {{orderFlowBlock}}
 {{downloadBlock}}
 <p><a href="{{orderStatusLink}}">Bestellstatus online ansehen</a></p>
+<p>Ihr AquaFotos Team</p>`,
+  },
+  {
+    key: EMAIL_TEMPLATE_KEYS.VOUCHER_PURCHASE,
+    label: "Gutschein-Kauf",
+    description: "Nach erfolgreichem Gutscheinkauf mit Code und QR.",
+    subject: "Ihr AquaFotos Gutschein – {{purchaseNumber}}",
+    placeholders: [
+      "buyerName",
+      "purchaseNumber",
+      "total",
+      "voucherListBlock",
+      "redeemGuideBlock",
+    ],
+    bodyHtml: `<p>Hallo {{buyerName}},</p>
+<p>vielen Dank für Ihren Gutscheinkauf!</p>
+<p><strong>Kaufnummer:</strong> {{purchaseNumber}}<br>
+<strong>Gesamtbetrag:</strong> {{total}}</p>
+{{voucherListBlock}}
+{{redeemGuideBlock}}
 <p>Ihr AquaFotos Team</p>`,
   },
 ];

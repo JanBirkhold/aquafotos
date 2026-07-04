@@ -8,6 +8,23 @@ export function buildQrPayload(accessCode: string): string {
   return `AQUAFOTOS:${accessCode}`;
 }
 
+export function buildVoucherCode(): string {
+  const segment = Date.now().toString(36).toUpperCase().slice(-6);
+  return `GS-${segment}`;
+}
+
+export function buildVoucherPurchaseNumber(): string {
+  return `AF-GS-${Date.now().toString(36).toUpperCase()}`;
+}
+
+export function buildVoucherQrPayload(code: string): string {
+  return `AQUAFOTOS:GUTSCHEIN:${code}`;
+}
+
+export function normalizeVoucherCode(input: string): string {
+  return input.trim().toUpperCase().replace(/\s+/g, "");
+}
+
 export function buildAccessCode(eventId: string, participantNumber: number): string {
   return `AF-${eventId.slice(-4).toUpperCase()}-${formatParticipantCode(participantNumber)}`;
 }

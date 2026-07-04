@@ -11,6 +11,8 @@ import {
   buildQrCodeBlock,
   buildReasonBlock,
   buildTimeLine,
+  buildVoucherListBlock,
+  buildVoucherRedeemGuideBlock,
   renderStoredEmail,
 } from "@/lib/email-templates";
 
@@ -217,6 +219,35 @@ export async function sendOrderReadyEmail(params: {
       orderFlowBlock: buildOrderFlowBlock(),
       downloadBlock: buildOrderDownloadBlock(params.downloadItems),
       orderStatusLink: params.orderStatusLink,
+    },
+    overrides: params.overrides,
+  });
+}
+
+export async function sendVoucherPurchaseEmail(params: {
+  to: string;
+  buyerName: string;
+  purchaseNumber: string;
+  total: string;
+  vouchers: {
+    code: string;
+    title: string;
+    preferredDate: string;
+    qrDataUrl: string | null;
+    redeemUrl: string;
+  }[];
+  overrides?: { subject?: string; bodyHtml?: string };
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://aquafotos.com";
+  return sendTemplatedEmail({
+    to: params.to,
+    templateKey: EMAIL_TEMPLATE_KEYS.VOUCHER_PURCHASE,
+    variables: {
+      buyerName: params.buyerName,
+      purchaseNumber: params.purchaseNumber,
+      total: params.total,
+      voucherListBlock: buildVoucherListBlock(params.vouchers),
+      redeemGuideBlock: buildVoucherRedeemGuideBlock(`${appUrl}/gutschein/einloesen`),
     },
     overrides: params.overrides,
   });
