@@ -1,5 +1,5 @@
-/** Stay under serverActions.bodySizeLimit with headroom for multipart overhead */
-export const UPLOAD_BATCH_MAX_BYTES = 20 * 1024 * 1024;
+/** Chunk large multi-file uploads to keep requests reliable and show partial progress */
+export const UPLOAD_BATCH_MAX_BYTES = 40 * 1024 * 1024;
 
 export function chunkFilesForUpload(
   files: File[],

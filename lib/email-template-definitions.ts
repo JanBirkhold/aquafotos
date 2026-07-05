@@ -8,6 +8,10 @@ export const EMAIL_TEMPLATE_KEYS = {
   ORDER_CONFIRMATION: "order_confirmation",
   ORDER_READY: "order_ready",
   VOUCHER_PURCHASE: "voucher_purchase",
+  VOUCHER_ORDER_PENDING: "voucher_order_pending",
+  VOUCHER_APPOINTMENT_CONFIRMED: "voucher_appointment_confirmed",
+  VOUCHER_APPOINTMENT_CHANGED: "voucher_appointment_changed",
+  VOUCHER_APPOINTMENT_CANCELLED: "voucher_appointment_cancelled",
 } as const;
 
 export type EmailTemplateKey =
@@ -130,14 +134,25 @@ export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
   {
     key: EMAIL_TEMPLATE_KEYS.ORDER_CONFIRMATION,
     label: "Bestellbestätigung",
-    description: "Direkt nach erfolgreicher Bestellung im Shop.",
-    subject: "Bestellbestätigung {{orderNumber}} – AquaFotos",
-    placeholders: ["orderNumber", "total", "orderFlowBlock"],
+    description: "Nach Bestellung – Rechnung im Anhang, Überweisung ausstehend.",
+    subject: "Bestellung {{orderNumber}} – Rechnung & Überweisung",
+    placeholders: [
+      "orderNumber",
+      "total",
+      "orderFlowBlock",
+      "orderItemsBlock",
+      "bankTransferBlock",
+      "orderStatusLink",
+    ],
     bodyHtml: `<p>Vielen Dank für Ihre Bestellung!</p>
 <p><strong>Bestellnummer:</strong> {{orderNumber}}<br>
 <strong>Gesamtbetrag:</strong> {{total}}</p>
+{{orderItemsBlock}}
+{{bankTransferBlock}}
+<p>Die Rechnung finden Sie im <strong>Anhang dieser E-Mail</strong> (PDF).</p>
 {{orderFlowBlock}}
-<p>Wir beginnen mit der Bearbeitung Ihrer Bilder.</p>
+<p>Sobald Ihre Überweisung bei uns eingegangen ist, beginnen wir mit der Bearbeitung Ihrer Bilder.</p>
+<p><a href="{{orderStatusLink}}">Bestellstatus online ansehen</a></p>
 <p>Ihr AquaFotos Team</p>`,
   },
   {
@@ -178,6 +193,118 @@ export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
 <strong>Gesamtbetrag:</strong> {{total}}</p>
 {{voucherListBlock}}
 {{redeemGuideBlock}}
+<p>Ihr AquaFotos Team</p>`,
+  },
+  {
+    key: EMAIL_TEMPLATE_KEYS.VOUCHER_ORDER_PENDING,
+    label: "Gutschein-Bestellung (Überweisung ausstehend)",
+    description: "Nach Bestellung – Zahlungsdaten, noch ohne Code/QR.",
+    subject: "Gutschein-Bestellung {{purchaseNumber}} – Überweisung ausstehend",
+    placeholders: [
+      "buyerName",
+      "purchaseNumber",
+      "total",
+      "bankTransferBlock",
+      "orderItemsBlock",
+    ],
+    bodyHtml: `<p>Hallo {{buyerName}},</p>
+<p>vielen Dank für Ihre Gutschein-Bestellung!</p>
+<p><strong>Kaufnummer:</strong> {{purchaseNumber}}<br>
+<strong>Gesamtbetrag:</strong> {{total}}</p>
+{{orderItemsBlock}}
+{{bankTransferBlock}}
+<p>Die Rechnung finden Sie im <strong>Anhang dieser E-Mail</strong> (PDF).</p>
+<p>Sobald Ihre Überweisung bei uns eingegangen ist, senden wir Ihnen die Gutschein-Codes und QR-Codes per E-Mail.</p>
+<p>Ihr AquaFotos Team</p>`,
+  },
+  {
+    key: EMAIL_TEMPLATE_KEYS.VOUCHER_APPOINTMENT_CONFIRMED,
+    label: "Gutschein-Termin bestätigt",
+    description:
+      "Nach Admin-Bestätigung einer Gutschein-Terminanfrage an den Einlöser.",
+    subject: "Ihr Shooting-Termin ist bestätigt – AquaFotos",
+    placeholders: [
+      "parentName",
+      "productTitle",
+      "shootingTypeLabel",
+      "confirmedDate",
+      "timeLine",
+      "location",
+      "childLine",
+      "phoneDisplay",
+      "contactLink",
+      "voucherStatusLink",
+    ],
+    bodyHtml: `<p>Hallo {{parentName}},</p>
+<p>Ihr Termin für das Gutschein-Shooting <strong>{{productTitle}}</strong> ist bestätigt!</p>
+<p><strong>Art:</strong> {{shootingTypeLabel}}<br>
+<strong>Datum:</strong> {{confirmedDate}}{{timeLine}}<br>
+<strong>Ort:</strong> {{location}}</p>
+<p>Wir freuen uns auf {{childLine}}!</p>
+<p>Bei Fragen erreichen Sie uns unter {{phoneDisplay}} oder über <a href="{{contactLink}}">Kontakt</a>.</p>
+<p>Ihr AquaFotos Team</p>`,
+  },
+  {
+    key: EMAIL_TEMPLATE_KEYS.VOUCHER_APPOINTMENT_CHANGED,
+    label: "Gutschein-Termin geändert",
+    description: "Benachrichtigung bei Terminverschiebung nach bestätigtem Gutschein-Shooting.",
+    subject: "Ihr Shooting-Termin wurde geändert – AquaFotos",
+    placeholders: [
+      "parentName",
+      "productTitle",
+      "shootingTypeLabel",
+      "previousDate",
+      "previousTimeLine",
+      "previousLocation",
+      "confirmedDate",
+      "timeLine",
+      "location",
+      "noteBlock",
+      "childLine",
+      "phoneDisplay",
+      "contactLink",
+      "voucherStatusLink",
+    ],
+    bodyHtml: `<p>Hallo {{parentName}},</p>
+<p>Ihr Termin für das Gutschein-Shooting <strong>{{productTitle}}</strong> wurde geändert.</p>
+<p><strong>Bisheriger Termin:</strong><br>
+{{previousDate}}{{previousTimeLine}}<br>
+{{previousLocation}}</p>
+<p><strong>Neuer Termin:</strong><br>
+<strong>Art:</strong> {{shootingTypeLabel}}<br>
+<strong>Datum:</strong> {{confirmedDate}}{{timeLine}}<br>
+<strong>Ort:</strong> {{location}}</p>
+{{noteBlock}}
+<p>Wir freuen uns auf {{childLine}}!</p>
+<p>Bei Fragen erreichen Sie uns unter {{phoneDisplay}} oder über <a href="{{contactLink}}">Kontakt</a>.</p>
+<p>Ihr AquaFotos Team</p>`,
+  },
+  {
+    key: EMAIL_TEMPLATE_KEYS.VOUCHER_APPOINTMENT_CANCELLED,
+    label: "Gutschein-Termin abgesagt",
+    description: "Benachrichtigung wenn ein bestätigter Shooting-Termin abgesagt wurde.",
+    subject: "Ihr Shooting-Termin wurde abgesagt – AquaFotos",
+    placeholders: [
+      "parentName",
+      "productTitle",
+      "shootingTypeLabel",
+      "previousDate",
+      "previousTimeLine",
+      "previousLocation",
+      "reasonBlock",
+      "childLine",
+      "phoneDisplay",
+      "contactLink",
+      "voucherStatusLink",
+    ],
+    bodyHtml: `<p>Hallo {{parentName}},</p>
+<p>leider müssen wir Ihren Termin für das Shooting <strong>{{productTitle}}</strong> absagen.</p>
+<p><strong>Abgesagter Termin:</strong><br>
+{{previousDate}}{{previousTimeLine}}<br>
+{{previousLocation}}</p>
+{{reasonBlock}}
+<p>Bitte melden Sie sich bei uns – wir finden gemeinsam einen neuen Termin.</p>
+<p>Bei Fragen erreichen Sie uns unter {{phoneDisplay}} oder über <a href="{{contactLink}}">Kontakt</a>.</p>
 <p>Ihr AquaFotos Team</p>`,
   },
 ];

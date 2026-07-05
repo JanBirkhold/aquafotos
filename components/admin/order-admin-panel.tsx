@@ -5,11 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Bell, Download, Loader2, Play, Upload } from "lucide-react";
 import { NotificationComposeDialog } from "@/components/admin/notification-compose-dialog";
+import { OrderRowMenu } from "@/components/admin/order-row-menu";
 import { OrderFlowTimeline } from "@/components/orders/order-flow-timeline";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   getOrderReadyNotificationVariables,
+  confirmOrderPayment,
   markAllOrderItemsReady,
   notifyOrderReady,
   startOrderProcessing,
@@ -33,11 +35,13 @@ export type AdminOrderDetail = {
   status: OrderStatus;
   isReorder: boolean;
   customerEmail: string | null;
+  invoiceUrl: string | null;
   totalCents: number;
   paidAt: string | null;
   processingStartedAt: string | null;
   readyNotifiedAt: string | null;
   deliveredAt: string | null;
+  sourceDeletedAt: string | null;
   createdAt: string;
   participantName: string | null;
   parentName: string | null;
@@ -121,6 +125,20 @@ export function OrderAdminPanel({ order }: { order: AdminOrderDetail }) {
         </div>
       </div>
 
+      {order.status === "SOURCE_DELETED" && (
+        <p
+          className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800"
+          role="status"
+        >
+          Galerie und Termin wurden gelöscht
+          {order.sourceDeletedAt
+            ? ` am ${new Date(order.sourceDeletedAt).toLocaleDateString("de-DE")}`
+            : ""}
+          . Bestellhistorie, Positionen und Rechnungen bleiben erhalten; Galerie-Vorschau ist nicht
+          mehr verfügbar.
+        </p>
+      )}
+
       {order.isReorder && (
         <p className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-950">
           Diese Bestellung ist eine <span className="font-medium">Nachbestellung</span> – der Kunde
@@ -139,6 +157,31 @@ export function OrderAdminPanel({ order }: { order: AdminOrderDetail }) {
       </section>
 
       <section className="flex flex-wrap gap-2">
+        {order.status !== "SOURCE_DELETED" && order.status === "PENDING_PAYMENT" && (
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const result = await confirmOrderPayment(order.id);
+                setMessage(result.error ?? "Zahlung bestätigt – Bearbeitung kann starten.");
+              })
+            }
+          >
+            {pending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+            ) : null}
+            Zahlung bestätigen
+          </Button>
+        )}
+        <OrderRowMenu
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          status={order.status}
+        />
+        {order.status !== "SOURCE_DELETED" && (
+          <>
         <Button
           type="button"
           size="sm"
@@ -177,6 +220,8 @@ export function OrderAdminPanel({ order }: { order: AdminOrderDetail }) {
           <Bell className="mr-2 h-4 w-4" aria-hidden />
           Kunde benachrichtigen
         </Button>
+          </>
+        )}
       </section>
 
       <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -187,14 +232,20 @@ export function OrderAdminPanel({ order }: { order: AdminOrderDetail }) {
           {order.items.map((item) => (
             <li key={item.id} className="overflow-hidden rounded-xl border border-slate-100">
               <div className="relative aspect-[3/4] bg-slate-100">
-                <Image
-                  src={item.previewUrl}
-                  alt={item.filename}
-                  fill
-                  className="object-cover"
-                  sizes="200px"
-                  unoptimized={item.previewUrl.startsWith("/uploads/")}
-                />
+                {item.previewUrl ? (
+                  <Image
+                    src={item.previewUrl}
+                    alt={item.filename}
+                    fill
+                    className="object-cover"
+                    sizes="200px"
+                    unoptimized={item.previewUrl.startsWith("/uploads/")}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-slate-500">
+                    Galerie-Vorschau nicht verfügbar
+                  </div>
+                )}
                 <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs text-white">
                   #{item.position}
                 </span>

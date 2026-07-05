@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { OrderRowMenu } from "@/components/admin/order-row-menu";
 import { formatEuro } from "@/lib/pricing";
-import { orderStatusColors, orderStatusLabels } from "@/lib/order-workflow";
+import { orderStatusColors, orderStatusLabels, orderStatusLabelsShort } from "@/lib/order-workflow";
 import { cn } from "@/lib/utils";
 
 export default async function AdminBestellungenPage() {
@@ -59,17 +60,19 @@ export default async function AdminBestellungenPage() {
               {orders.map((o) => {
                 const readyCount = o.items.filter((i) => i.status === "READY").length;
                 const inReview = o.items.filter((i) => i.status === "IN_REVIEW").length;
+                const hasDownloads = o.items.some((i) => i.finalStorageKey);
                 return (
                   <tr key={o.id} className="border-b border-slate-50">
                     <td className="p-4 font-mono">{o.orderNumber}</td>
                     <td className="p-4">
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          "inline-block max-w-[7.5rem] truncate rounded-full px-2 py-0.5 text-xs font-medium",
                           orderStatusColors[o.status],
                         )}
+                        title={orderStatusLabels[o.status]}
                       >
-                        {orderStatusLabels[o.status]}
+                        {orderStatusLabelsShort[o.status]}
                       </span>
                     </td>
                     <td className="p-4">
@@ -86,18 +89,26 @@ export default async function AdminBestellungenPage() {
                       {readyCount}/{o.items.length} fertig
                       {inReview > 0 ? ` · ${inReview} Sichtung` : ""}
                       {o.readyNotifiedAt ? " · ✉ gesendet" : ""}
+                      {hasDownloads ? " · Download" : ""}
                     </td>
                     <td className="p-4">{formatEuro(o.totalCents)}</td>
                     <td className="p-4">
                       {o.createdAt.toLocaleDateString("de-DE")}
                     </td>
-                    <td className="p-4">
-                      <Link
-                        href={`/admin/bestellungen/${o.id}`}
-                        className="font-medium text-aqua-700 hover:underline"
-                      >
-                        Bearbeiten
-                      </Link>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/bestellungen/${o.id}`}
+                          className="font-medium text-aqua-700 hover:underline"
+                        >
+                          Bearbeiten
+                        </Link>
+                        <OrderRowMenu
+                          orderId={o.id}
+                          orderNumber={o.orderNumber}
+                          status={o.status}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

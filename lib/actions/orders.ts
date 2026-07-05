@@ -6,10 +6,15 @@ import { revalidatePath } from "next/cache";
 import { auth, isStaffRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendOrderReadyEmail } from "@/lib/email";
+import { markParticipantsOrdered } from "@/lib/actions/participant-workflow";
 import {
   orderStatusPageUrl,
   serializeOrderItem,
 } from "@/lib/order-queries";
+import { resolveOrderInvoicePdf } from "@/lib/order-invoice";
+import { invoiceFilename } from "@/lib/invoice-filename";
+import { formatEuro } from "@/lib/pricing";
+import { sendOrderInvoiceEmailMessage } from "@/lib/email";
 import { getReorderPhotoIdsForOrder } from "@/lib/order-reorder";
 import {
   syncOrderStatusFromItems,
@@ -80,7 +85,7 @@ export async function updateOrderItemStatus(
       readyAt: status === "READY" ? new Date() : null,
       finalStorageKey:
         status === "READY" && !existing.finalStorageKey
-          ? existing.photo.storageKey
+          ? (existing.photo?.storageKey ?? undefined)
           : status !== "READY"
             ? existing.finalStorageKey
             : undefined,
@@ -128,7 +133,7 @@ export async function markAllOrderItemsReady(orderId: string) {
         data: {
           status: "READY",
           readyAt: new Date(),
-          finalStorageKey: item.finalStorageKey ?? item.photo.storageKey,
+          finalStorageKey: item.finalStorageKey ?? item.photo?.storageKey ?? undefined,
         },
       }),
     ),
@@ -170,7 +175,11 @@ export async function uploadOrderItemFinal(formData: FormData) {
   await mkdir(uploadDir, { recursive: true });
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const filename = `${String(item.position).padStart(2, "0")}_${item.photo.filename.replace(/\.[^.]+$/, "")}_final.${ext}`;
+  const baseName = (item.photo?.filename ?? item.archivedFilename ?? "bild").replace(
+    /\.[^.]+$/,
+    "",
+  );
+  const filename = `${String(item.position).padStart(2, "0")}_${baseName}_final.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(uploadDir, filename), buffer);
 
@@ -200,7 +209,7 @@ export async function notifyOrderReady(
   await requireStaff();
 
   const order = await loadOrder(orderId);
-  const participant = order.items[0]?.photo.participant;
+  const participant = order.items[0]?.photo?.participant;
   const email = order.customerEmail ?? participant?.email;
 
   if (!email) return { error: "Keine E-Mail für diese Bestellung." };
@@ -209,7 +218,7 @@ export async function notifyOrderReady(
   const downloadItems = order.items
     .filter((i) => i.status === "READY")
     .map((i) => ({
-      filename: i.photo.filename,
+      filename: i.photo?.filename ?? i.archivedFilename ?? "Bild",
       downloadUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://aquafotos.com"}/api/orders/items/${i.id}/download`,
     }));
 
@@ -240,7 +249,7 @@ export async function notifyOrderReady(
 export async function getOrderReadyNotificationVariables(orderId: string) {
   await requireStaff();
   const order = await loadOrder(orderId);
-  const participant = order.items[0]?.photo.participant;
+  const participant = order.items[0]?.photo?.participant;
   const accessCode = participant?.galleryAccess?.accessCode;
 
   const { buildOrderDownloadBlock, buildOrderFlowBlock } = await import(
@@ -257,7 +266,7 @@ export async function getOrderReadyNotificationVariables(orderId: string) {
         order.items
           .filter((i) => i.finalStorageKey)
           .map((i) => ({
-            filename: i.photo.filename,
+            filename: i.photo?.filename ?? i.archivedFilename ?? "Bild",
             downloadUrl: orderStatusPageUrl(order.orderNumber, accessCode),
           })),
       ),
@@ -279,18 +288,52 @@ export async function getAdminOrderDetail(orderId: string) {
     isReorder: order.isReorder,
     customerEmail: order.customerEmail,
     totalCents: order.totalCents,
+    invoiceUrl: order.invoiceUrl,
     paidAt: order.paidAt?.toISOString() ?? null,
     processingStartedAt: order.processingStartedAt?.toISOString() ?? null,
     readyNotifiedAt: order.readyNotifiedAt?.toISOString() ?? null,
     deliveredAt: order.deliveredAt?.toISOString() ?? null,
+    sourceDeletedAt: order.sourceDeletedAt?.toISOString() ?? null,
     createdAt: order.createdAt.toISOString(),
-    participantName: order.items[0]?.photo.participant?.childName ?? null,
-    parentName: order.items[0]?.photo.participant?.parentName ?? null,
+    participantName:
+      order.items[0]?.photo?.participant?.childName ?? order.archivedChildName ?? null,
+    parentName:
+      order.items[0]?.photo?.participant?.parentName ?? order.archivedParentName ?? null,
     items: order.items.map((item) => ({
       ...serializeOrderItem(item),
-      isReorderItem: reorderPhotoIds.has(item.photoId),
+      isReorderItem: item.photoId ? reorderPhotoIds.has(item.photoId) : false,
     })),
   };
+}
+
+export async function confirmOrderPayment(orderId: string) {
+  await requireStaff();
+
+  const order = await loadOrder(orderId);
+  if (order.status !== "PENDING_PAYMENT") {
+    return { error: "Keine ausstehende Zahlung für diese Bestellung." };
+  }
+
+  const paidAt = new Date();
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: "PAID", paidAt },
+  });
+
+  const participantIds = order.items
+    .map((item) => item.photo?.participantId)
+    .filter((id): id is string => Boolean(id));
+
+  await markParticipantsOrdered(participantIds);
+
+  revalidatePath("/admin/bestellungen");
+  revalidatePath(`/admin/bestellungen/${orderId}`);
+  revalidatePath(`/bestellung/${order.orderNumber}`);
+  if (order.eventId) {
+    revalidatePath(`/admin/shootings/${order.eventId}`);
+  }
+
+  return { success: true };
 }
 
 export async function updateOrderStatusAdmin(
@@ -308,4 +351,100 @@ export async function updateOrderStatusAdmin(
   revalidatePath("/admin/bestellungen");
   revalidatePath(`/admin/bestellungen/${orderId}`);
   return { success: true };
+}
+
+export async function getOrderInvoicePdfForAdmin(orderNumber: string): Promise<{
+  pdfBase64?: string;
+  filename?: string;
+  error?: string;
+}> {
+  try {
+    await requireStaff();
+
+    const order = await prisma.order.findUnique({
+      where: { orderNumber },
+      select: { id: true, status: true },
+    });
+
+    if (!order) {
+      return { error: "Bestellung nicht gefunden." };
+    }
+
+    if (order.status === "CANCELLED") {
+      return { error: "Für stornierte Bestellungen ist keine Rechnung verfügbar." };
+    }
+
+    const invoicePdf = await resolveOrderInvoicePdf(orderNumber);
+    if (!invoicePdf) {
+      return { error: "Rechnung konnte nicht erstellt werden." };
+    }
+
+    return {
+      pdfBase64: Buffer.from(invoicePdf).toString("base64"),
+      filename: invoiceFilename(orderNumber),
+    };
+  } catch {
+    return { error: "Rechnung nicht verfügbar." };
+  }
+}
+
+export async function sendOrderInvoiceEmail(orderNumber: string) {
+  try {
+    await requireStaff();
+
+    const order = await prisma.order.findUnique({
+      where: { orderNumber },
+      include: {
+        items: {
+          include: { photo: { include: { participant: true } } },
+          orderBy: { position: "asc" },
+        },
+      },
+    });
+
+    if (!order) {
+      return { error: "Bestellung nicht gefunden." };
+    }
+
+    if (order.status === "CANCELLED") {
+      return { error: "Stornierte Bestellungen können nicht versendet werden." };
+    }
+
+    const participant = order.items[0]?.photo?.participant;
+    const email = order.customerEmail ?? participant?.email;
+    if (!email) {
+      return { error: "Keine E-Mail für diese Bestellung hinterlegt." };
+    }
+
+    const invoicePdf = await resolveOrderInvoicePdf(orderNumber);
+    if (!invoicePdf) {
+      return { error: "Rechnung konnte nicht erstellt werden." };
+    }
+
+    const delivery = await sendOrderInvoiceEmailMessage({
+      to: email,
+      parentName: participant?.parentName ?? "Kunde",
+      orderNumber,
+      total: formatEuro(order.totalCents),
+      invoicePdf,
+    });
+
+    if (!delivery.configured) {
+      return {
+        error:
+          "E-Mail-Versand ist nicht konfiguriert (RESEND_API_KEY fehlt). Rechnung kann angezeigt und gedruckt werden.",
+      };
+    }
+
+    if (!delivery.sent) {
+      return { error: delivery.error ?? "Rechnung konnte nicht per E-Mail gesendet werden." };
+    }
+
+    return {
+      success: true,
+      message: `Rechnung wurde an ${email} gesendet.`,
+    };
+  } catch {
+    return { error: "Rechnung konnte nicht gesendet werden." };
+  }
 }

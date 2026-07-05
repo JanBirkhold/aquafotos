@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Download } from "lucide-react";
+import { BankTransferBox } from "@/components/shared/bank-transfer-box";
+import { OrderInvoiceActions } from "@/components/orders/order-invoice-actions";
 import { OrderFlowTimeline } from "@/components/orders/order-flow-timeline";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +11,7 @@ import {
   orderStatusLabels,
 } from "@/lib/order-workflow";
 import { formatEuro } from "@/lib/pricing";
+import { getBankTransferDetails } from "@/lib/voucher-payment";
 import type { OrderItemStatus, OrderStatus } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +19,8 @@ export type CustomerOrderView = {
   orderNumber: string;
   status: OrderStatus;
   totalCents: number;
+  customerEmail?: string | null;
+  invoiceUrl?: string | null;
   paidAt: string | null;
   processingStartedAt: string | null;
   readyNotifiedAt: string | null;
@@ -39,6 +44,8 @@ type Props = {
 
 export function CustomerOrderStatusView({ order, accessCode }: Props) {
   const canDownload = order.items.some((i) => i.downloadUrl);
+  const isPendingPayment = order.status === "PENDING_PAYMENT";
+  const bank = getBankTransferDetails();
 
   function downloadHref(url: string) {
     if (!accessCode) return url;
@@ -64,6 +71,31 @@ export function CustomerOrderStatusView({ order, accessCode }: Props) {
           {new Date(order.createdAt).toLocaleDateString("de-DE")}
         </p>
       </div>
+
+      {isPendingPayment && (
+        <>
+          <BankTransferBox
+            bank={bank}
+            reference={order.orderNumber}
+            totalCents={order.totalCents}
+            description="Bitte überweisen Sie den Betrag innerhalb von 7 Tagen. Nach Zahlungseingang beginnen wir mit der Bearbeitung."
+            referenceCopyLabel="Bestellnummer kopieren"
+          />
+          <section className="rounded-2xl border border-aqua-100 bg-white p-6 shadow-sm">
+            <h2 className="font-display text-lg font-semibold text-aqua-900">Rechnung</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Rechnung ansehen, herunterladen oder ausdrucken.
+            </p>
+            <div className="mt-4">
+              <OrderInvoiceActions
+                orderNumber={order.orderNumber}
+                invoiceUrl={order.invoiceUrl}
+                accessCode={accessCode}
+              />
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="rounded-2xl border border-aqua-100 bg-white p-6 shadow-sm">
         <h2 className="font-display text-lg font-semibold text-aqua-900">Ihr Bestellablauf</h2>

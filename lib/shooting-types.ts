@@ -71,6 +71,16 @@ export const categoryShootingTypes: Record<ShootingCategory, ShootingType[]> = {
   OTHER: ["OTHER"],
 };
 
+export function getCategoryForShootingType(type: ShootingType): ShootingCategory {
+  for (const [category, types] of Object.entries(categoryShootingTypes) as [
+    ShootingCategory,
+    ShootingType[],
+  ][]) {
+    if (types.includes(type)) return category;
+  }
+  return "OTHER";
+}
+
 export type ServicePage = {
   slug: string;
   title: string;
@@ -90,7 +100,7 @@ export const servicePages: ServicePage[] = [
     title: "Unterwasserfotografie",
     headline: "Magische Momente unter Wasser",
     subline:
-      "Emotionale Unterwasserbilder für Babys, Kinder, Familien und Geschwister in Ostwestfalen.",
+      "Emotionale Unterwasserbilder für Babys, Kinder, Familien und Geschwister – Termine online buchbar.",
     category: "UNDERWATER",
     audience: "Eltern mit Babys & Kindern",
     message: "Die schönsten Erinnerungen entstehen nur einmal.",

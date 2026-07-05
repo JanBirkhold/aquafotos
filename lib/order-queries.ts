@@ -59,14 +59,16 @@ export function serializeOrderItem(item: {
   status: OrderItemStatus;
   finalStorageKey: string | null;
   readyAt: Date | null;
+  archivedFilename?: string | null;
   photo: {
     id: string;
     filename: string;
     storageKey: string;
     previewKey: string | null;
-  };
+  } | null;
 }) {
-  const previewUrl = getPhotoDisplayUrl(item.photo);
+  const filename = item.photo?.filename ?? item.archivedFilename ?? "Galerie-Datei entfernt";
+  const previewUrl = item.photo ? getPhotoDisplayUrl(item.photo) : "";
   const storageKey = resolveOrderItemStorageKey(item);
   const downloadUrl = storageKey ? buildOrderItemDownloadUrl(item.id) : null;
   const hasFinalFile = !!item.finalStorageKey;
@@ -76,7 +78,7 @@ export function serializeOrderItem(item: {
     position: item.position,
     priceCents: item.priceCents,
     status: item.status,
-    filename: item.photo.filename,
+    filename,
     previewUrl,
     downloadUrl,
     hasFinalFile,
@@ -89,6 +91,8 @@ export function serializeCustomerOrder(order: {
   status: OrderStatus;
   totalCents: number;
   isReorder?: boolean;
+  customerEmail?: string | null;
+  invoiceUrl?: string | null;
   paidAt: Date | null;
   processingStartedAt: Date | null;
   readyNotifiedAt: Date | null;
@@ -101,6 +105,8 @@ export function serializeCustomerOrder(order: {
     status: order.status,
     totalCents: order.totalCents,
     isReorder: order.isReorder ?? false,
+    customerEmail: order.customerEmail ?? null,
+    invoiceUrl: order.invoiceUrl ?? null,
     paidAt: order.paidAt?.toISOString() ?? null,
     processingStartedAt: order.processingStartedAt?.toISOString() ?? null,
     readyNotifiedAt: order.readyNotifiedAt?.toISOString() ?? null,
@@ -128,7 +134,7 @@ export async function verifyOrderAccess(
   if (!order) return { ok: false };
 
   const code = accessCode?.trim().toUpperCase();
-  const participant = order.items[0]?.photo.participant;
+  const participant = order.items[0]?.photo?.participant;
   const galleryCode = participant?.galleryAccess?.accessCode;
 
   if (code && galleryCode && code === galleryCode) {
@@ -166,7 +172,8 @@ export async function verifyOrderItemDownloadAccess(
     position: number;
     status: OrderItemStatus;
     finalStorageKey: string | null;
-    photo: { filename: string; storageKey: string };
+    archivedFilename: string | null;
+    photo: { filename: string; storageKey: string } | null;
     order: { orderNumber: string; customerEmail: string | null };
   };
 }> {

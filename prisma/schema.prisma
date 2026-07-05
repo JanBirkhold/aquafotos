@@ -186,6 +186,7 @@ model ShootingEvent {
   waitlist     WaitlistEntry[]
   photos       Photo[]
   orders       Order[]
+  individualShootingReqs IndividualShootingRequest[]
 
   @@index([status, date])
   @@index([shootingType])
@@ -288,6 +289,7 @@ model Participant {
   photos        Photo[]
   galleryAccess GalleryAccess?
   favorites     PhotoFavorite[]
+  individualShootingReq IndividualShootingRequest?
 
   @@unique([eventId, participantNumber])
   @@index([eventId])
@@ -337,6 +339,16 @@ model ShootingNotification {
   @@index([email, shootingType])
 }
 
+model PartnerInquiry {
+  id        String   @id @default(cuid())
+  company   String
+  location  String
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model IndividualShootingRequest {
   id           String       @id @default(cuid())
   userId       String?
@@ -349,14 +361,21 @@ model IndividualShootingRequest {
   message      String?      @db.Text
   status       String       @default("PENDING")
   confirmedDate DateTime?    @db.Date
+  confirmedTime String?
+  confirmedLocation String?
+  eventId       String?
+  participantId String?      @unique
   voucherId     String?      @unique
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  user    User?    @relation(fields: [userId], references: [id])
-  voucher Voucher? @relation(fields: [voucherId], references: [id])
+  user        User?           @relation(fields: [userId], references: [id])
+  voucher     Voucher?        @relation(fields: [voucherId], references: [id])
+  event       ShootingEvent?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  participant Participant?    @relation(fields: [participantId], references: [id], onDelete: SetNull)
 
   @@index([status])
+  @@index([eventId])
 }
 
 // ─── Photos & Processing ─────────────────────────────────────────────
@@ -469,6 +488,7 @@ enum OrderStatus {
   READY
   DELIVERED
   CANCELLED
+  SOURCE_DELETED
 }
 
 enum OrderItemStatus {
@@ -498,6 +518,9 @@ model Order {
   readyNotifiedAt DateTime?
   deliveredAt     DateTime?
   invoiceUrl      String?
+  sourceDeletedAt DateTime?
+  archivedParentName String?
+  archivedChildName  String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -514,7 +537,8 @@ model Order {
 model OrderItem {
   id              String          @id @default(cuid())
   orderId         String
-  photoId         String
+  photoId         String?
+  archivedFilename String?
   priceCents      Int
   position        Int
   status          OrderItemStatus @default(AWAITING_PROCESSING)
@@ -522,7 +546,7 @@ model OrderItem {
   readyAt         DateTime?
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  photo Photo @relation(fields: [photoId], references: [id])
+  photo Photo? @relation(fields: [photoId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([status])
@@ -542,6 +566,7 @@ model VoucherProduct {
   id           String        @id @default(cuid())
   title        String
   description  String?       @db.Text
+  imageUrl     String?
   priceCents   Int
   shootingType ShootingType?
   sortOrder    Int           @default(0)

@@ -4,11 +4,14 @@ import { notFound, redirect } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { GalleryPhotoGrid } from "@/components/gallery/gallery-photo-grid";
 import { GalleryOrderStatusBar } from "@/components/gallery/gallery-order-status-bar";
+import { GalleryProcessingEmptyState } from "@/components/gallery/gallery-processing-empty-state";
 import { verifyGalleryAccess } from "@/lib/gallery-queries";
 import { getActivePricing, getGalleryShopState } from "@/lib/shop-queries";
+import { isVoucherGalleryAccessCode } from "@/lib/voucher-gallery";
 import { auth } from "@/lib/auth";
 import { emailsMatch } from "@/lib/gallery-access";
 import { getPhotoDisplayUrl } from "@/lib/gallery";
+import { buildBilderBestellenUrl } from "@/lib/gallery-access-url";
 import { cartSessionId } from "@/lib/gallery-session";
 import { formatEuro, calculatePhotoTotal } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
@@ -21,7 +24,10 @@ import { getPreviouslyOrderedPhotoIds } from "@/lib/order-reorder";
 import { createPageMetadata } from "@/lib/seo";
 import type { OrderItemStatus } from "@prisma/client";
 
-type Props = { params: Promise<{ code: string }> };
+type Props = {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ email?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return createPageMetadata({
@@ -31,8 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function CustomerGalleryPage({ params }: Props) {
+export default async function CustomerGalleryPage({ params, searchParams }: Props) {
   const { code } = await params;
+  const { email: emailParam } = await searchParams;
   const normalizedCode = cartSessionId(code);
   const access = await verifyGalleryAccess(normalizedCode);
 
@@ -43,13 +50,19 @@ export default async function CustomerGalleryPage({ params }: Props) {
     !session?.user?.email ||
     !emailsMatch(session.user.email, access.participant.email)
   ) {
-    redirect(`/bilder-bestellen?code=${encodeURIComponent(normalizedCode)}`);
+    redirect(
+      buildBilderBestellenUrl(normalizedCode, {
+        email: emailParam,
+        auto: !!emailParam?.trim(),
+      }),
+    );
   }
 
   const photos = access.participant.photos;
   const shop = await getGalleryShopState(normalizedCode, access.participant.id);
-  const pricing = await getActivePricing();
-  const priceExample = calculatePhotoTotal(3, pricing);
+  const isVoucherGallery = await isVoucherGalleryAccessCode(normalizedCode);
+  const pricing = isVoucherGallery ? null : await getActivePricing();
+  const priceExample = pricing ? calculatePhotoTotal(3, pricing) : null;
 
   const galleryPhotos = photos.map((photo) => ({
     id: photo.id,
@@ -75,6 +88,7 @@ export default async function CustomerGalleryPage({ params }: Props) {
 
   for (const order of orders) {
     for (const item of order.items) {
+      if (!item.photoId) continue;
       if (orderItemsByPhotoId[item.photoId]) continue;
       const serialized = serializeOrderItem(item);
       orderItemsByPhotoId[item.photoId] = {
@@ -136,15 +150,28 @@ export default async function CustomerGalleryPage({ params }: Props) {
 
         <p className="mt-4 rounded-2xl border border-aqua-100 bg-aqua-50/50 p-4 text-sm text-slate-600">
           Vorschaubilder haben Wasserzeichen und geringe Auflösung. Nach dem Kauf erhalten Sie
-          hochauflösende Dateien ohne Wasserzeichen. 3 Bilder = {formatEuro(priceExample)}.
-          Wählen Sie Bilder aus und bestellen Sie über den Warenkorb.
+          hochauflösende Dateien ohne Wasserzeichen.
+          {isVoucherGallery ? (
+            <>
+              {" "}
+              Ihre Bildauswahl ist im Gutschein enthalten – wählen Sie Fotos aus und bestätigen Sie
+              über den Warenkorb ohne Extra-Preise.
+            </>
+          ) : (
+            <>
+              {" "}
+              3 Bilder = {formatEuro(priceExample!)}. Wählen Sie Bilder aus und bestellen Sie über
+              den Warenkorb.
+            </>
+          )}
         </p>
 
         {photos.length === 0 ? (
-          <p className="mt-12 text-center text-slate-500">
-            Ihre Bilder werden gerade bearbeitet. Sie erhalten eine E-Mail, sobald die Galerie
-            bereit ist.
-          </p>
+          <GalleryProcessingEmptyState
+            childName={access.participant.childName}
+            email={access.participant.email}
+            accessCode={access.accessCode}
+          />
         ) : (
           <GalleryPhotoGrid
             accessCode={access.accessCode}

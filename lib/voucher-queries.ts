@@ -1,7 +1,227 @@
+import { galleryVisibleStatuses } from "@/lib/gallery";
+import { emailsMatch } from "@/lib/gallery-access";
 import { prisma } from "@/lib/prisma";
+import { normalizeVoucherCode } from "@/lib/qr-utils";
 import { getOrCreateVoucherSessionId, getVoucherSessionId } from "@/lib/voucher-session";
+import { mapVoucherGalleryAccess, type VoucherGalleryAccess } from "@/lib/voucher-gallery";
 import { shootingTypeLabels } from "@/lib/shooting-types";
 import type { ShootingType } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+
+const voucherDetailInclude = {
+  product: true,
+  individualShootingReq: {
+    include: {
+      participant: {
+        include: {
+          galleryAccess: true,
+          photos: {
+            where: { processingStatus: { in: galleryVisibleStatuses } },
+            select: { id: true, processingStatus: true },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+type VoucherWithDetails = Prisma.VoucherGetPayload<{ include: typeof voucherDetailInclude }>;
+
+export type VoucherLookupMatch = "code" | "purchase" | "gallery";
+
+const GALLERY_ACCESS_CODE_PATTERN = /^AF-[A-Z0-9]+-\d{3}$/;
+
+export function isGalleryAccessCode(input: string): boolean {
+  return GALLERY_ACCESS_CODE_PATTERN.test(normalizeVoucherCode(input));
+}
+
+export async function resolveVoucherByInput(
+  input: string,
+): Promise<{ voucher: VoucherWithDetails; matchedAs: VoucherLookupMatch } | null> {
+  const normalized = normalizeVoucherCode(input);
+  if (!normalized) return null;
+
+  const direct = await prisma.voucher.findFirst({
+    where: {
+      OR: [
+        { code: normalized },
+        { purchaseNumber: normalized },
+        { qrPayload: { contains: normalized } },
+      ],
+    },
+    include: voucherDetailInclude,
+  });
+
+  if (direct) {
+    const matchedAs: VoucherLookupMatch =
+      direct.purchaseNumber === normalized
+        ? "purchase"
+        : direct.code === normalized
+          ? "code"
+          : "code";
+    return { voucher: direct, matchedAs };
+  }
+
+  if (!isGalleryAccessCode(normalized)) return null;
+
+  const galleryAccess = await prisma.galleryAccess.findFirst({
+    where: { accessCode: normalized },
+    select: {
+      participant: {
+        select: {
+          individualShootingReq: {
+            select: { voucherId: true },
+          },
+        },
+      },
+    },
+  });
+
+  const voucherId = galleryAccess?.participant?.individualShootingReq?.voucherId;
+  if (!voucherId) return null;
+
+  const voucher = await prisma.voucher.findUnique({
+    where: { id: voucherId },
+    include: voucherDetailInclude,
+  });
+
+  if (!voucher) return null;
+
+  return { voucher, matchedAs: "gallery" };
+}
+
+function mapVoucherGalleryFromRow(
+  voucher: {
+    individualShootingReq: {
+      participant: Parameters<typeof mapVoucherGalleryAccess>[0];
+    } | null;
+  },
+  email?: string,
+): VoucherGalleryAccess | null {
+  return mapVoucherGalleryAccess(voucher.individualShootingReq?.participant, { email });
+}
+
+export type VoucherRedeemLookupView = {
+  code: string;
+  inputCode?: string;
+  lookupHint?: string | null;
+  status: string;
+  title: string;
+  shootingTypeLabel: string | null;
+  preferredDate: string | null;
+  recipientName: string | null;
+  expiresAt: string | null;
+  qrDataUrl: string | null;
+  redeemable: boolean;
+  purchaseNumber: string;
+  confirmedDate: string | null;
+  confirmedTime: string | null;
+  confirmedLocation: string | null;
+  gallery: VoucherGalleryAccess | null;
+  parentName: string | null;
+  childName: string | null;
+  verifiedEmail: string;
+};
+
+export function authorizeVoucherRedeemEmail(
+  voucher: VoucherWithDetails,
+  email: string,
+): string | null {
+  const trimmed = email.trim();
+  if (!trimmed) return "Bitte E-Mail angeben.";
+
+  if (voucher.status === "REDEEMED") {
+    const reqEmail = voucher.individualShootingReq?.email;
+    if (!reqEmail || !emailsMatch(trimmed, reqEmail)) {
+      return "E-Mail und Gutschein-Code passen nicht zusammen.";
+    }
+    return null;
+  }
+
+  if (voucher.status === "PENDING_PAYMENT") {
+    if (!emailsMatch(trimmed, voucher.buyerEmail)) {
+      return "E-Mail passt nicht zur Gutschein-Bestellung.";
+    }
+    return null;
+  }
+
+  return null;
+}
+
+export function mapVoucherToRedeemLookupView(
+  voucher: VoucherWithDetails,
+  options: {
+    verifiedEmail: string;
+    inputCode?: string;
+    lookupHint?: string | null;
+  },
+): VoucherRedeemLookupView {
+  const req = voucher.individualShootingReq;
+
+  return {
+    code: voucher.code,
+    inputCode: options.inputCode,
+    lookupHint: options.lookupHint ?? null,
+    status: voucher.status,
+    title: voucher.product.title,
+    shootingTypeLabel: voucher.product.shootingType
+      ? shootingTypeLabels[voucher.product.shootingType]
+      : null,
+    preferredDate:
+      (req?.preferredDate ?? voucher.preferredDate)?.toISOString().slice(0, 10) ?? null,
+    recipientName: voucher.recipientName,
+    expiresAt: voucher.expiresAt?.toISOString().slice(0, 10) ?? null,
+    qrDataUrl: voucher.qrDataUrl,
+    redeemable: voucher.status === "PAID",
+    purchaseNumber: voucher.purchaseNumber,
+    confirmedDate: req?.confirmedDate?.toISOString().slice(0, 10) ?? null,
+    confirmedTime: req?.confirmedTime ?? null,
+    confirmedLocation: req?.confirmedLocation ?? null,
+    gallery: mapVoucherGalleryFromRow(voucher, options.verifiedEmail),
+    parentName: req?.parentName ?? null,
+    childName: req?.childName ?? null,
+    verifiedEmail: options.verifiedEmail.trim(),
+  };
+}
+
+export async function lookupVoucherForVerifiedAccess(code: string, email: string) {
+  const normalized = normalizeVoucherCode(code);
+  if (!normalized) {
+    return { error: "Bitte Gutschein-Code angeben." } as const;
+  }
+
+  const resolved = await resolveVoucherByInput(normalized);
+  if (!resolved) {
+    if (isGalleryAccessCode(normalized)) {
+      return {
+        error:
+          "Das ist ein Galerie-Zugangscode (AF-…). Bitte GS-XXXXXX aus der Gutschein-E-Mail verwenden.",
+      } as const;
+    }
+    return { error: "Gutschein-Code nicht gefunden. Format: GS-XXXXXX" } as const;
+  }
+
+  const authError = authorizeVoucherRedeemEmail(resolved.voucher, email);
+  if (authError) {
+    return { error: authError } as const;
+  }
+
+  const { voucher, matchedAs } = resolved;
+  const lookupHint =
+    matchedAs === "gallery"
+      ? `Galerie-Code ${normalized} erkannt – zugehöriger Gutschein ${voucher.code}.`
+      : matchedAs === "purchase"
+        ? `Bestellnummer erkannt – Gutschein ${voucher.code}.`
+        : null;
+
+  return {
+    voucher: mapVoucherToRedeemLookupView(voucher, {
+      verifiedEmail: email,
+      inputCode: normalized,
+      lookupHint,
+    }),
+  } as const;
+}
 
 const DEFAULT_VOUCHER_PRODUCTS: {
   title: string;
@@ -91,7 +311,6 @@ export async function getVoucherCartSummary() {
       : null,
     priceCents: item.product.priceCents,
     recipientName: item.recipientName,
-    preferredDate: item.preferredDate?.toISOString().slice(0, 10) ?? "",
     personalMessage: item.personalMessage ?? "",
   }));
 
@@ -106,43 +325,38 @@ export async function getVoucherCartSummary() {
 }
 
 export async function getVoucherByCode(code: string) {
-  const normalized = code.trim().toUpperCase();
-  return prisma.voucher.findFirst({
-    where: {
-      OR: [{ code: normalized }, { qrPayload: { contains: normalized } }],
-    },
-    include: { product: true },
-  });
+  const resolved = await resolveVoucherByInput(code);
+  return resolved?.voucher ?? null;
 }
 
 export async function getVouchersByPurchaseNumber(purchaseNumber: string) {
   return prisma.voucher.findMany({
     where: { purchaseNumber },
-    include: { product: true },
+    include: voucherDetailInclude,
     orderBy: { createdAt: "asc" },
   });
 }
 
-export async function lookupVoucherForDisplay(code: string) {
-  const normalized = code.trim().toUpperCase();
+export async function lookupVoucherForDisplay(input: string) {
+  const normalized = normalizeVoucherCode(input);
   if (!normalized) return null;
 
-  const voucher = await getVoucherByCode(normalized);
-  if (!voucher) return null;
+  const resolved = await resolveVoucherByInput(normalized);
+  if (!resolved) return null;
 
-  return {
-    code: voucher.code,
-    status: voucher.status,
-    title: voucher.product.title,
-    shootingTypeLabel: voucher.product.shootingType
-      ? shootingTypeLabels[voucher.product.shootingType]
-      : null,
-    preferredDate: voucher.preferredDate?.toISOString().slice(0, 10) ?? null,
-    recipientName: voucher.recipientName,
-    expiresAt: voucher.expiresAt?.toISOString().slice(0, 10) ?? null,
-    qrDataUrl: voucher.qrDataUrl,
-    redeemable: voucher.status === "PAID",
-  };
+  const { voucher, matchedAs } = resolved;
+  const lookupHint =
+    matchedAs === "gallery"
+      ? `Galerie-Code ${normalized} erkannt – zugehöriger Gutschein ${voucher.code}.`
+      : matchedAs === "purchase"
+        ? `Bestellnummer erkannt – Gutschein ${voucher.code}.`
+        : null;
+
+  return mapVoucherToRedeemLookupView(voucher, {
+    verifiedEmail: "",
+    inputCode: normalized,
+    lookupHint,
+  });
 }
 
 export async function getVoucherCartCount(): Promise<number> {

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const ext = storageKey.split(".").pop()?.toLowerCase() ?? "jpg";
     const filename = orderItemDownloadFilename(
       item.position,
-      item.photo.filename,
+      item.photo?.filename ?? item.archivedFilename ?? "bild",
       !!item.finalStorageKey,
     );
 

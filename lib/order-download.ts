@@ -3,10 +3,10 @@ import type { OrderItemStatus } from "@prisma/client";
 export function resolveOrderItemStorageKey(item: {
   status: OrderItemStatus;
   finalStorageKey: string | null;
-  photo: { storageKey: string };
+  photo: { storageKey: string } | null;
 }): string | null {
   if (item.status !== "READY") return null;
-  return item.finalStorageKey ?? item.photo.storageKey ?? null;
+  return item.finalStorageKey ?? item.photo?.storageKey ?? null;
 }
 
 export function buildOrderItemDownloadUrl(itemId: string): string {

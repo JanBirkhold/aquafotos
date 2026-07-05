@@ -40,7 +40,11 @@ export async function markParticipantGalleryViewed(participantId: string) {
   const now = new Date();
   const participant = await prisma.participant.findUnique({
     where: { id: participantId },
-    include: { galleryAccess: true },
+    include: {
+      galleryAccess: true,
+      individualShootingReq: { select: { id: true, voucherId: true, eventId: true } },
+      _count: { select: { photos: true } },
+    },
   });
   if (!participant) return;
 
@@ -56,6 +60,18 @@ export async function markParticipantGalleryViewed(participantId: string) {
     });
   }
 
+  const isVoucherEinzel =
+    participant.individualShootingReq?.voucherId != null &&
+    participant.individualShootingReq.eventId == null;
+
+  if (isVoucherEinzel && participant._count.photos === 0) {
+    revalidatePath(`/admin/shootings/${participant.eventId}`);
+    if (participant.individualShootingReq?.id) {
+      revalidatePath(`/admin/shootings/einzel/${participant.individualShootingReq.id}`);
+    }
+    return;
+  }
+
   if (normalizeParticipantStatus(participant.status) === "ORDERED") return;
 
   await prisma.participant.update({
@@ -68,6 +84,9 @@ export async function markParticipantGalleryViewed(participantId: string) {
   });
 
   revalidatePath(`/admin/shootings/${participant.eventId}`);
+  if (participant.individualShootingReq?.id) {
+    revalidatePath(`/admin/shootings/einzel/${participant.individualShootingReq.id}`);
+  }
 }
 
 export async function markParticipantsOrdered(participantIds: string[]) {

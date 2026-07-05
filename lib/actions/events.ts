@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { emailFeedbackFromDelivery } from "@/lib/email-delivery";
 import { sendParticipantConfirmationEmail } from "@/lib/participant-email";
 import { isCoupleShooting } from "@/lib/registration-fields";
 import { buildAccessCode, buildQrPayload, generateQrDataUrl } from "@/lib/qr-utils";
-import type { ShootingType } from "@prisma/client";
+import { ShootingType } from "@prisma/client";
 
 const registerSchema = z.object({
   eventId: z.string(),
@@ -23,6 +24,8 @@ export type RegisterFormState = {
   error?: string;
   success?: boolean;
   accessCode?: string;
+  emailSent?: boolean;
+  emailNotice?: string;
 } | null;
 
 export async function registerForEvent(
@@ -57,6 +60,21 @@ export async function registerForEvent(
 
     if (event._count.participants >= event.maxParticipants) {
       return { error: "Dieser Termin ist ausgebucht. Bitte Warteliste nutzen." };
+    }
+
+    if (parsed.data.slotId) {
+      const slot = await prisma.eventSlot.findUnique({
+        where: { id: parsed.data.slotId },
+        include: { _count: { select: { participants: true } } },
+      });
+
+      if (!slot || slot.eventId !== event.id) {
+        return { error: "Ungültiger Termin-Slot." };
+      }
+
+      if (slot._count.participants >= slot.maxParticipants) {
+        return { error: "Dieser Slot ist ausgebucht." };
+      }
     }
 
     const participantNumber =
@@ -105,14 +123,22 @@ export async function registerForEvent(
       select: { id: true },
     });
 
+    let emailSent = false;
+    let emailNotice: string | undefined;
+
     if (created) {
-      await sendParticipantConfirmationEmail(created.id);
+      const emailResult = await sendParticipantConfirmationEmail(created.id);
+      if (emailResult.delivery) {
+        const feedback = emailFeedbackFromDelivery(emailResult.delivery, { saved: true });
+        emailSent = feedback.emailSent;
+        emailNotice = feedback.emailNotice;
+      }
     }
 
     revalidatePath("/shootings");
     revalidatePath(`/shootings/${event.id}`);
 
-    return { success: true, accessCode };
+    return { success: true, accessCode, emailSent, emailNotice };
   } catch (error) {
     console.error("[registerForEvent]", error);
     return {
@@ -149,6 +175,15 @@ export async function joinWaitlist(
       return { error: "Ungültige Eingaben." };
     }
 
+    const event = await prisma.shootingEvent.findUnique({
+      where: { id: parsed.data.eventId },
+      select: { allowWaitlist: true },
+    });
+
+    if (!event?.allowWaitlist) {
+      return { error: "Für dieses Shooting ist keine Warteliste verfügbar." };
+    }
+
     await prisma.waitlistEntry.create({ data: parsed.data });
     revalidatePath(`/shootings/${parsed.data.eventId}`);
 
@@ -161,30 +196,37 @@ export async function joinWaitlist(
 
 const notifySchema = z.object({
   email: z.string().email(),
-  shootingType: z.string(),
+  shootingType: z.nativeEnum(ShootingType, {
+    message: "Bitte Shooting-Art wählen.",
+  }),
   location: z.string().optional(),
 });
 
 export async function subscribeToShootingNotifications(formData: FormData) {
-  const parsed = notifySchema.safeParse({
-    email: formData.get("email"),
-    shootingType: formData.get("shootingType"),
-    location: formData.get("location") || undefined,
-  });
+  try {
+    const parsed = notifySchema.safeParse({
+      email: formData.get("email"),
+      shootingType: formData.get("shootingType"),
+      location: formData.get("location") || undefined,
+    });
 
-  if (!parsed.success) {
-    return { error: "Bitte gültige E-Mail angeben." };
+    if (!parsed.success) {
+      return { error: "Bitte gültige E-Mail und Shooting-Art angeben." };
+    }
+
+    await prisma.shootingNotification.create({
+      data: {
+        email: parsed.data.email,
+        shootingType: parsed.data.shootingType as ShootingType,
+        location: parsed.data.location,
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[subscribeToShootingNotifications]", error);
+    return { error: "Anmeldung konnte nicht gespeichert werden." };
   }
-
-  await prisma.shootingNotification.create({
-    data: {
-      email: parsed.data.email,
-      shootingType: parsed.data.shootingType as ShootingType,
-      location: parsed.data.location,
-    },
-  });
-
-  return { success: true };
 }
 
 const individualSchema = z.object({
@@ -192,35 +234,42 @@ const individualSchema = z.object({
   childName: z.string().optional(),
   email: z.string().email(),
   phone: z.string().min(6),
-  shootingType: z.string(),
+  shootingType: z.nativeEnum(ShootingType, {
+    message: "Bitte Shooting-Art wählen.",
+  }),
   preferredDate: z.string().optional(),
   message: z.string().optional(),
 });
 
 export async function requestIndividualShooting(formData: FormData) {
-  const parsed = individualSchema.safeParse({
-    parentName: formData.get("parentName"),
-    childName: formData.get("childName") || undefined,
-    email: formData.get("email"),
-    phone: formData.get("phone"),
-    shootingType: formData.get("shootingType"),
-    preferredDate: formData.get("preferredDate") || undefined,
-    message: formData.get("message") || undefined,
-  });
+  try {
+    const parsed = individualSchema.safeParse({
+      parentName: formData.get("parentName"),
+      childName: formData.get("childName") || undefined,
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      shootingType: formData.get("shootingType"),
+      preferredDate: formData.get("preferredDate") || undefined,
+      message: formData.get("message") || undefined,
+    });
 
-  if (!parsed.success) {
-    return { error: "Bitte alle Pflichtfelder ausfüllen." };
+    if (!parsed.success) {
+      return { error: "Bitte alle Pflichtfelder ausfüllen." };
+    }
+
+    await prisma.individualShootingRequest.create({
+      data: {
+        ...parsed.data,
+        shootingType: parsed.data.shootingType as ShootingType,
+        preferredDate: parsed.data.preferredDate
+          ? new Date(parsed.data.preferredDate)
+          : undefined,
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[requestIndividualShooting]", error);
+    return { error: "Anfrage konnte nicht gespeichert werden." };
   }
-
-  await prisma.individualShootingRequest.create({
-    data: {
-      ...parsed.data,
-      shootingType: parsed.data.shootingType as ShootingType,
-      preferredDate: parsed.data.preferredDate
-        ? new Date(parsed.data.preferredDate)
-        : undefined,
-    },
-  });
-
-  return { success: true };
 }

@@ -42,6 +42,18 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
   READY: "Bereit zum Download",
   DELIVERED: "Ausgeliefert",
   CANCELLED: "Storniert",
+  SOURCE_DELETED: "Galerie-Daten gelöscht",
+};
+
+/** Kompakte Labels für Tabellen (Admin → Bestellungen) */
+export const orderStatusLabelsShort: Record<OrderStatus, string> = {
+  PENDING_PAYMENT: "Zahlung offen",
+  PAID: "Bezahlt",
+  PROCESSING: "Bearbeitung",
+  READY: "Download",
+  DELIVERED: "Ausgeliefert",
+  CANCELLED: "Storniert",
+  SOURCE_DELETED: "Galerie weg",
 };
 
 export const orderStatusColors: Record<OrderStatus, string> = {
@@ -51,6 +63,7 @@ export const orderStatusColors: Record<OrderStatus, string> = {
   READY: "bg-green-100 text-green-800",
   DELIVERED: "bg-slate-100 text-slate-800",
   CANCELLED: "bg-red-100 text-red-800",
+  SOURCE_DELETED: "bg-slate-200 text-slate-700",
 };
 
 export const orderItemStatusLabels: Record<OrderItemStatus, string> = {
@@ -125,7 +138,9 @@ export function syncOrderStatusFromItems(
   items: { status: OrderItemStatus }[],
   current: OrderStatus,
 ): OrderStatus {
-  if (current === "CANCELLED" || current === "PENDING_PAYMENT") return current;
+  if (current === "CANCELLED" || current === "PENDING_PAYMENT" || current === "SOURCE_DELETED") {
+    return current;
+  }
   if (items.length === 0) return current;
 
   const allReady = items.every((i) => i.status === "READY");

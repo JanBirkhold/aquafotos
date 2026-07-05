@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/familie",
     "/aktionen",
     "/shootings",
+    "/info",
     "/bilder-bestellen",
     "/partner",
     "/kontakt",

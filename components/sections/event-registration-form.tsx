@@ -30,17 +30,29 @@ export function EventRegistrationForm({ event }: Props) {
   );
 
   if (state?.success) {
+    const emailWarning = state.emailSent === false;
+
     return (
       <div
-        className="rounded-3xl border border-aqua-200 bg-aqua-50 p-8 text-center"
+        className={cn(
+          "rounded-3xl border p-8 text-center",
+          emailWarning ? "border-amber-200 bg-amber-50" : "border-aqua-200 bg-aqua-50",
+        )}
         role="status"
       >
         <h3 className="font-display text-xl font-semibold text-aqua-900">
           Anmeldung erfolgreich!
         </h3>
-        <p className="mt-2 text-slate-600">
-          Vielen Dank – Sie erhalten eine Bestätigung per E-Mail.
-        </p>
+        {state.emailSent !== false && (
+          <p className="mt-2 text-slate-600">
+            Vielen Dank – Sie erhalten eine Bestätigung per E-Mail.
+          </p>
+        )}
+        {state.emailNotice && (
+          <p className="mt-2 text-sm text-amber-800" role="note">
+            {state.emailNotice}
+          </p>
+        )}
         {state.accessCode && (
           <p className="mt-4 rounded-2xl bg-white px-4 py-3 font-mono text-sm text-aqua-800">
             Ihr Zugangscode: <strong>{state.accessCode}</strong>

@@ -56,6 +56,11 @@ export function Header() {
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuItem asChild>
+                  <Link href="/info" className="font-medium text-aqua-700">
+                    Info & FAQ →
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/shootings" className="font-medium text-aqua-700">
                     Alle Termine →
                   </Link>
@@ -82,9 +87,9 @@ export function Header() {
               <Link href="/bilder-bestellen">Bilder bestellen</Link>
             </Button>
             <Link
-              href="/gutschein/warenkorb"
+              href="/gutschein"
               className="inline-flex h-10 w-10 items-center justify-center rounded-full text-aqua-700 transition-colors hover:bg-aqua-50"
-              aria-label="Gutschein-Warenkorb"
+              aria-label="Gutschein"
             >
               <Gift className="h-5 w-5" />
             </Link>
@@ -155,6 +160,13 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
+              <Link
+                href="/info"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-2xl px-4 py-2.5 text-sm font-medium text-aqua-700"
+              >
+                Info & FAQ
+              </Link>
               <Link
                 href="/shootings"
                 onClick={() => setMobileOpen(false)}

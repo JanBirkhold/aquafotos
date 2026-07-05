@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ShoppingBag, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { siteConfig } from "@/lib/site-config";
 
 type CartNoticeProps = {
   empty?: boolean;
@@ -41,7 +42,7 @@ export function OrderInfoNotices() {
       />
       <Notice
         title="Echtzeit-Überweisung"
-        text="Bei Echtzeit-Überweisung werden Bilder in der Regel innerhalb weniger Minuten zugesendet – auch an Sonn- und Feiertagen."
+        text={`Bei Echtzeit-Überweisung stehen Ihre fertigen Bilddateien in der Regel innerhalb weniger Minuten zum Download bereit – auch an Sonn- und Feiertagen. Bei Verzögerungen erreichen Sie uns unter ${siteConfig.phoneDisplay}.`}
       />
       <Notice
         title="Cookies im Bestellprozess"

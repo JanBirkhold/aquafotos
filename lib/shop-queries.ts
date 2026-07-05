@@ -7,6 +7,7 @@ import {
 import { getPhotoDisplayUrl } from "@/lib/gallery";
 import { cartSessionId, getGalleryAccessCookie } from "@/lib/gallery-session";
 import { orderIncludesReorderPhotos } from "@/lib/order-reorder";
+import { isVoucherGalleryAccessCode } from "@/lib/voucher-gallery";
 
 export async function getActivePricing() {
   try {
@@ -67,6 +68,10 @@ export async function getCartSummary(accessCode?: string | null) {
   const sessionId = cartSessionId(code);
   const pricing = await getActivePricing();
   const cart = await getCart(sessionId);
+  const photoIds = cart?.items.map((item) => item.photoId) ?? [];
+  const hasReorderItems = photoIds.length > 0 ? await orderIncludesReorderPhotos(photoIds) : false;
+  const isVoucherIncluded =
+    !hasReorderItems && (await isVoucherGalleryAccessCode(sessionId));
 
   if (!cart) {
     return {
@@ -77,12 +82,11 @@ export async function getCartSummary(accessCode?: string | null) {
       breakdown: [],
       pricing,
       hasReorderItems: false,
+      isVoucherIncluded,
     };
   }
 
   const count = cart.items.length;
-  const photoIds = cart.items.map((item) => item.photoId);
-  const hasReorderItems = await orderIncludesReorderPhotos(photoIds);
 
   return {
     accessCode: sessionId,
@@ -93,9 +97,12 @@ export async function getCartSummary(accessCode?: string | null) {
       src: getPhotoDisplayUrl(item.photo),
     })),
     count,
-    totalCents: calculatePhotoTotal(count, pricing),
-    breakdown: getPricingBreakdown(count, pricing),
+    totalCents: isVoucherIncluded ? 0 : calculatePhotoTotal(count, pricing),
+    breakdown: isVoucherIncluded
+      ? [{ label: "Im Gutschein enthalten", cents: 0 }]
+      : getPricingBreakdown(count, pricing),
     pricing,
     hasReorderItems,
+    isVoucherIncluded,
   };
 }

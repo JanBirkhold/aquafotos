@@ -12,11 +12,11 @@ export const metadata: Metadata = createPageMetadata({
 });
 
 type Props = {
-  searchParams: Promise<{ code?: string }>;
+  searchParams: Promise<{ code?: string; email?: string; auto?: string }>;
 };
 
 export default async function BilderBestellenPage({ searchParams }: Props) {
-  const { code } = await searchParams;
+  const { code, email, auto } = await searchParams;
 
   return (
     <div className="section-padding min-h-[70vh] pt-28">
@@ -33,7 +33,11 @@ export default async function BilderBestellenPage({ searchParams }: Props) {
         </p>
       </div>
       <div className="mt-10">
-        <GalleryAccessForm defaultAccessCode={code} />
+        <GalleryAccessForm
+          defaultAccessCode={code}
+          defaultEmail={email}
+          autoOpen={auto === "1"}
+        />
       </div>
       <OrderInfoNotices />
     </div>

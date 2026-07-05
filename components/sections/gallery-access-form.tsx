@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { QrCode, KeyRound, Lock } from "lucide-react";
@@ -9,47 +8,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { openGalleryAccess } from "@/lib/actions/gallery-access";
+import { openGallerySession } from "@/lib/gallery-open-session";
 
 type Props = {
   defaultAccessCode?: string;
+  defaultEmail?: string;
+  autoOpen?: boolean;
 };
 
-export function GalleryAccessForm({ defaultAccessCode = "" }: Props) {
+export function GalleryAccessForm({
+  defaultAccessCode = "",
+  defaultEmail = "",
+  autoOpen = false,
+}: Props) {
   const router = useRouter();
   const [accessCode, setAccessCode] = useState(defaultAccessCode.toUpperCase());
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const autoAttempted = useRef(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const enterGallery = useCallback(async (mail: string, code: string) => {
     setLoading(true);
     setError("");
 
-    const code = accessCode.trim().toUpperCase();
-    const mail = email.trim();
-
-    const result = await openGalleryAccess(mail, code);
+    const result = await openGallerySession(mail, code);
     if (result.error) {
       setError(result.error);
       setLoading(false);
       return;
     }
 
-    const signInResult = await signIn("credentials", {
-      email: mail,
-      accessCode: code,
-      redirect: false,
-    });
+    router.push(`/galerie/${result.accessCode}`);
+  }, [router]);
 
-    if (signInResult?.error) {
-      setError("Anmeldung fehlgeschlagen. Bitte erneut versuchen.");
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    if (!autoOpen || !defaultAccessCode || !defaultEmail || autoAttempted.current) return;
+    autoAttempted.current = true;
+    void enterGallery(defaultEmail, defaultAccessCode);
+  }, [autoOpen, defaultAccessCode, defaultEmail, enterGallery]);
 
-    router.push(`/galerie/${code}`);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await enterGallery(email.trim(), accessCode.trim());
   }
 
   return (
@@ -62,42 +63,46 @@ export function GalleryAccessForm({ defaultAccessCode = "" }: Props) {
         </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">E-Mail-Adresse</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@beispiel.de"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accessCode">Zugangscode</Label>
-            <Input
-              id="accessCode"
-              name="accessCode"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-              placeholder="AF-XXXX-001"
-              required
-              className="font-mono uppercase"
-              autoComplete="off"
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Wird geprüft…" : "Galerie öffnen"}
-          </Button>
-        </form>
+        {loading && autoOpen && !error ? (
+          <p className="py-8 text-center text-sm text-slate-600">Galerie wird geöffnet…</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">E-Mail-Adresse</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@beispiel.de"
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="accessCode">Zugangscode</Label>
+              <Input
+                id="accessCode"
+                name="accessCode"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                placeholder="AF-XXXX-001"
+                required
+                className="font-mono uppercase"
+                autoComplete="off"
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Wird geprüft…" : "Galerie öffnen"}
+            </Button>
+          </form>
+        )}
         <div className="mt-6 flex items-center gap-3 rounded-2xl bg-aqua-50 p-4 text-sm text-slate-600">
           <QrCode className="h-5 w-5 shrink-0 text-aqua-600" aria-hidden />
           Der QR-Code vom Shooting enthält Ihren Zugangscode – die E-Mail ist die aus

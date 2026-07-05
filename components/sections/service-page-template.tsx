@@ -9,6 +9,7 @@ import {
   shootingTypeLabels,
 } from "@/lib/shooting-types";
 import type { ServicePage } from "@/lib/shooting-types";
+import { infoHrefForCategory } from "@/lib/shooting-info-content";
 
 type ServicePageTemplateProps = {
   service: ServicePage;
@@ -44,6 +45,9 @@ export function ServicePageTemplate({ service }: ServicePageTemplateProps) {
               <Link href="/shootings">Shooting finden</Link>
             </Button>
             <Button asChild variant="secondary" size="lg">
+              <Link href={infoHrefForCategory(service.category)}>Ablauf & FAQ</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
               <Link href="/kontakt">Kontakt aufnehmen</Link>
             </Button>
           </div>

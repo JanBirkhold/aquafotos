@@ -61,6 +61,8 @@ export default async function OrderStatusPage({ params, searchParams }: Props) {
     orderNumber: order.orderNumber,
     status: order.status,
     totalCents: order.totalCents,
+    customerEmail: order.customerEmail,
+    invoiceUrl: order.invoiceUrl,
     paidAt: order.paidAt?.toISOString() ?? null,
     processingStartedAt: order.processingStartedAt?.toISOString() ?? null,
     readyNotifiedAt: order.readyNotifiedAt?.toISOString() ?? null,

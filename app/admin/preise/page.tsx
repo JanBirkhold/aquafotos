@@ -1,81 +1,50 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { PhotoPricingPanel } from "@/components/admin/photo-pricing-panel";
+import { VoucherProductsPanel } from "@/components/admin/voucher-products-panel";
+import { getAllVoucherProductsForAdmin } from "@/lib/actions/voucher-admin";
+import { getActivePricing } from "@/lib/shop-queries";
 
-import { useActionState } from "react";
-import { formatEuro, DEFAULT_PRICING } from "@/lib/pricing";
-import { updatePricing } from "@/lib/actions/admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+export const metadata: Metadata = {
+  title: "Preise & Gutscheine – Admin",
+};
 
-export default function AdminPreisePage() {
-  const [state, action, pending] = useActionState(
-    async (_p: { success?: boolean } | null, fd: FormData) => {
-      await updatePricing({
-        firstImagePrice: Math.round(Number(fd.get("first")) * 100),
-        secondImagePrice: Math.round(Number(fd.get("second")) * 100),
-        additionalPrice: Math.round(Number(fd.get("additional")) * 100),
-      });
-      return { success: true };
-    },
-    null,
-  );
+export default async function AdminPreisePage() {
+  const [pricing, rawProducts] = await Promise.all([
+    getActivePricing(),
+    getAllVoucherProductsForAdmin(),
+  ]);
+
+  const products = rawProducts.map((p) => ({
+    id: p.id,
+    title: p.title,
+    description: p.description,
+    imageUrl: p.imageUrl,
+    priceCents: p.priceCents,
+    shootingType: p.shootingType,
+    sortOrder: p.sortOrder,
+    active: p.active,
+    soldCount: p._count.vouchers,
+  }));
 
   return (
-    <div className="max-w-lg space-y-6">
-      <h1 className="font-display text-3xl font-bold text-aqua-900">
-        Preisverwaltung
-      </h1>
-      <p className="text-slate-600">
-        Staffelpreise werden automatisch im Warenkorb berechnet.
-      </p>
+    <div className="space-y-12">
+      <div>
+        <h1 className="font-display text-3xl font-bold text-aqua-900">
+          Preise & Gutscheine
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Bild-Staffelpreise für die Galerie und Gutschein-Angebote im Shop. Bestellungen verwalten
+          Sie unter{" "}
+          <Link href="/admin/gutscheine" className="text-aqua-700 underline underline-offset-2">
+            Gutscheine
+          </Link>
+          .
+        </p>
+      </div>
 
-      <form action={action} className="space-y-4 rounded-2xl bg-white p-6 shadow-sm">
-        <div className="space-y-2">
-          <Label htmlFor="first">Erstes Bild (€)</Label>
-          <Input
-            id="first"
-            name="first"
-            type="number"
-            step="0.01"
-            defaultValue={DEFAULT_PRICING.firstImagePrice / 100}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="second">Zweites Bild (€)</Label>
-          <Input
-            id="second"
-            name="second"
-            type="number"
-            step="0.01"
-            defaultValue={DEFAULT_PRICING.secondImagePrice / 100}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="additional">Jedes weitere Bild (€)</Label>
-          <Input
-            id="additional"
-            name="additional"
-            type="number"
-            step="0.01"
-            defaultValue={DEFAULT_PRICING.additionalPrice / 100}
-            required
-          />
-        </div>
-
-        <div className="rounded-xl bg-aqua-50 p-4 text-sm text-slate-600">
-          <p>Beispiel 5 Bilder: {formatEuro(3500 + 2500 + 3 * 1500)}</p>
-        </div>
-
-        {state?.success && (
-          <p className="text-sm text-aqua-700">Preise gespeichert.</p>
-        )}
-
-        <Button type="submit" disabled={pending}>
-          Speichern
-        </Button>
-      </form>
+      <PhotoPricingPanel pricing={pricing} />
+      <VoucherProductsPanel products={products} />
     </div>
   );
 }

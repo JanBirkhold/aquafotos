@@ -23,6 +23,7 @@ type Props = {
 
 export function CartView({ cart, customerEmail }: Props) {
   const [pending, startTransition] = useTransition();
+  const voucherIncluded = cart.isVoucherIncluded;
 
   return (
     <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_320px]">
@@ -45,12 +46,16 @@ export function CartView({ cart, customerEmail }: Props) {
               <p className="text-sm font-medium text-aqua-900">Bild {index + 1}</p>
               <p className="truncate text-xs text-slate-500">{item.filename}</p>
               <p className="mt-1 text-sm font-semibold text-slate-800">
-                {formatEuro(
-                  index === 0
-                    ? cart.pricing.firstImagePrice
-                    : index === 1
-                      ? cart.pricing.secondImagePrice
-                      : cart.pricing.additionalPrice,
+                {voucherIncluded ? (
+                  <span className="text-green-700">Im Gutschein enthalten</span>
+                ) : (
+                  formatEuro(
+                    index === 0
+                      ? cart.pricing.firstImagePrice
+                      : index === 1
+                        ? cart.pricing.secondImagePrice
+                        : cart.pricing.additionalPrice,
+                  )
                 )}
               </p>
             </div>
@@ -75,6 +80,11 @@ export function CartView({ cart, customerEmail }: Props) {
 
       <aside className="h-fit rounded-2xl border border-aqua-100 bg-white p-6 shadow-sm">
         <h2 className="font-display text-lg font-semibold text-aqua-900">Zusammenfassung</h2>
+        {voucherIncluded && (
+          <p className="mt-3 rounded-xl border border-green-100 bg-green-50/80 p-3 text-xs text-green-900">
+            Gutschein-Galerie: Ihre Bildauswahl ist bereits bezahlt – keine Überweisung nötig.
+          </p>
+        )}
         {cart.hasReorderItems && (
           <p className="mt-3 rounded-xl border border-amber-100 bg-amber-50/80 p-3 text-xs text-amber-950">
             Diese Bestellung enthält <span className="font-medium">Nachbestellungen</span> – wir
@@ -123,14 +133,25 @@ export function CartView({ cart, customerEmail }: Props) {
           </div>
           <label className="flex items-start gap-2 text-sm text-slate-600">
             <input type="checkbox" name="bindingConfirmed" required className="mt-1" />
-            <span>Ich bestelle verbindlich die ausgewählten Bilder. *</span>
+            <span>
+              {voucherIncluded
+                ? "Ich bestelle verbindlich die ausgewählten Bilder aus meinem Gutschein. *"
+                : "Ich bestelle verbindlich die ausgewählten Bilder und zahle per Überweisung. *"}
+            </span>
           </label>
+          <p className="text-xs text-slate-500">
+            {voucherIncluded
+              ? "Nach Absenden beginnen wir mit der Bearbeitung – Sie erhalten eine Bestätigung per E-Mail."
+              : "Nach Absenden erhalten Sie eine Rechnung per E-Mail mit Überweisungsdaten."}
+          </p>
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Wird verarbeitet…
               </>
+            ) : voucherIncluded ? (
+              "Auswahl bestätigen"
             ) : (
               "Jetzt bestellen"
             )}

@@ -1,36 +1,42 @@
 import type { Metadata } from "next";
+import { VoucherFlowActions } from "@/components/voucher/voucher-flow-actions";
 import { VoucherRedeemForm } from "@/components/voucher/voucher-redeem-form";
-import { lookupVoucherForDisplay } from "@/lib/voucher-queries";
+import { VoucherRedeemHowTo } from "@/components/voucher/voucher-redeem-how-to";
+import { VOUCHER_REDEEM_NOTE } from "@/lib/voucher-redeem-content";
 import { createPageMetadata } from "@/lib/seo";
 
 type Props = {
-  searchParams: Promise<{ code?: string }>;
+  searchParams: Promise<{ code?: string; email?: string }>;
 };
 
 export const metadata: Metadata = createPageMetadata({
   title: "Gutschein einlösen – AquaFotos",
-  description: "AquaFotos Gutschein-Code oder QR-Code einlösen und Termin zur Anmeldung reservieren.",
+  description:
+    "AquaFotos Gutschein einlösen: Terminanfrage für Ihr individuelles Shooting – wir bestätigen Ihren Wunschtermin persönlich.",
   path: "/gutschein/einloesen",
 });
 
 export default async function GutscheinEinloesenPage({ searchParams }: Props) {
-  const { code: codeParam } = await searchParams;
+  const { code: codeParam, email: emailParam } = await searchParams;
   const initialCode = codeParam?.trim() ?? "";
-  const voucher = initialCode ? await lookupVoucherForDisplay(initialCode) : null;
+  const initialEmail = emailParam?.trim() ?? "";
 
   return (
     <div className="section-padding pt-28">
       <div className="mx-auto max-w-4xl">
-        <div className="text-center">
+        <VoucherFlowActions active="einloesen" className="justify-center" />
+        <div className="mt-8 text-center">
           <h1 className="font-display text-4xl font-bold text-aqua-900">Gutschein einlösen</h1>
           <p className="mt-3 text-slate-600">
-            Code eingeben oder QR-Code aus der E-Mail scannen – dann Anmeldung mit Ihrem
-            Wunschtermin abschließen.
+            Code und E-Mail aus der Gutschein-E-Mail – Terminstatus, Kalender-Download und Galerie
+            abrufen oder neue Terminanfrage senden.
           </p>
+          <p className="mt-2 text-sm text-slate-500">{VOUCHER_REDEEM_NOTE}</p>
         </div>
 
         <div className="mt-10">
-          <VoucherRedeemForm initialCode={initialCode} voucher={voucher} />
+          <VoucherRedeemHowTo />
+          <VoucherRedeemForm initialCode={initialCode} initialEmail={initialEmail} />
         </div>
       </div>
     </div>

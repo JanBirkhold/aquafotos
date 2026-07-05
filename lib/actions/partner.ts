@@ -3,7 +3,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { auth, isStaffRole } from "@/lib/auth";
+import { sendPartnerInquiryEmail } from "@/lib/email";
+import { emailFeedbackFromDelivery } from "@/lib/email-delivery";
 import { partnerLogoRequirements } from "@/lib/partners";
 import { prisma } from "@/lib/prisma";
 import type { PartnerType } from "@prisma/client";
@@ -97,12 +100,18 @@ export async function updatePartner(partnerId: string, formData: FormData) {
 
 export async function deletePartner(partnerId: string) {
   await requireStaff();
-  await prisma.partner.update({
-    where: { id: partnerId },
-    data: { active: false, featured: false },
+
+  await prisma.$transaction(async (tx) => {
+    await tx.shootingEvent.updateMany({
+      where: { partnerId },
+      data: { partnerId: null },
+    });
+    await tx.partner.delete({ where: { id: partnerId } });
   });
+
   revalidatePath("/admin/partner");
   revalidatePath("/partner");
+  revalidatePath("/admin/shootings");
   return { success: true };
 }
 
@@ -123,5 +132,57 @@ export async function getFeaturedPartners() {
     });
   } catch {
     return [];
+  }
+}
+
+export type PartnerInquiryState = {
+  error?: string;
+  success?: boolean;
+  emailSent?: boolean;
+  emailNotice?: string;
+} | null;
+
+const partnerInquirySchema = z.object({
+  company: z.string().min(2, "Bitte Unternehmen angeben."),
+  location: z.string().min(2, "Bitte Ort angeben."),
+  email: z.string().email("Bitte gültige E-Mail angeben."),
+  gdprConsent: z.literal(true, {
+    message: "Bitte Datenschutz-Einwilligung bestätigen.",
+  }),
+});
+
+export async function submitPartnerInquiry(
+  _prev: PartnerInquiryState,
+  formData: FormData,
+): Promise<PartnerInquiryState> {
+  try {
+    const parsed = partnerInquirySchema.safeParse({
+      company: formData.get("company"),
+      location: formData.get("location"),
+      email: formData.get("email"),
+      gdprConsent: formData.get("gdprConsent") === "on" ? true : undefined,
+    });
+
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Bitte alle Felder prüfen." };
+    }
+
+    await prisma.partnerInquiry.create({ data: parsed.data });
+
+    const delivery = await sendPartnerInquiryEmail(parsed.data);
+    const feedback = emailFeedbackFromDelivery(delivery, { saved: true });
+
+    if (feedback.error) {
+      return { error: feedback.error };
+    }
+
+    return {
+      success: true,
+      emailSent: feedback.emailSent,
+      emailNotice: feedback.emailNotice,
+    };
+  } catch (error) {
+    console.error("[submitPartnerInquiry]", error);
+    return { error: "Anfrage konnte nicht gespeichert werden. Bitte später erneut versuchen." };
   }
 }

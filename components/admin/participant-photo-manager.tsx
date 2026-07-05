@@ -22,15 +22,25 @@ import {
   renameParticipantPhoto,
   replaceParticipantPhoto,
   reorderParticipantPhotos,
-  uploadParticipantPhotos,
 } from "@/lib/actions/admin";
+import { postParticipantPhotoUpload } from "@/lib/admin-photo-upload-client";
+import { PhotoUploadReleaseOptions } from "@/components/admin/photo-upload-release-options";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import type { PhotoUploadReleaseMode } from "@/lib/photo-release";
+import {
+  photoProcessingStatusColors,
+  photoProcessingStatusLabels,
+} from "@/lib/photo-release";
 import { chunkFilesForUpload } from "@/lib/upload-batches";
 import { cn } from "@/lib/utils";
+
+import type { PhotoProcessingStatus } from "@prisma/client";
 
 export type ParticipantPhoto = {
   id: string;
   filename: string;
   storageKey: string;
+  processingStatus?: PhotoProcessingStatus;
 };
 
 type Props = {
@@ -60,7 +70,10 @@ export function ParticipantPhotoManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [replacingId, setReplacingId] = useState<string | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
   const [dragOver, setDragOver] = useState(false);
+  const [releaseMode, setReleaseMode] = useState<PhotoUploadReleaseMode>("select_edit");
+  const [notifyCustomer, setNotifyCustomer] = useState(true);
 
   useEffect(() => {
     setLocalPhotos(photos);
@@ -87,15 +100,19 @@ export function ParticipantPhotoManager({
 
     startTransition(async () => {
       let uploaded = 0;
+      const skipped: { filename: string; reason: string }[] = [];
 
-      for (const batch of batches) {
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
         const fd = new FormData();
         fd.set("eventId", eventId);
         fd.set("participantId", participantId);
+        fd.set("releaseMode", releaseMode);
+        fd.set("notifyCustomer", notifyCustomer ? "true" : "false");
         for (const file of batch) fd.append("photos", file);
 
-        const res = await uploadParticipantPhotos(fd);
-        if (res.error) {
+        const res = await postParticipantPhotoUpload(fd);
+        if ("error" in res) {
           onMessage(
             uploaded > 0
               ? `${uploaded} Foto(s) hochgeladen, dann Fehler: ${res.error}`
@@ -105,21 +122,32 @@ export function ParticipantPhotoManager({
           return;
         }
         uploaded += res.uploaded ?? 0;
+        skipped.push(...res.skipped);
       }
 
-      onMessage(`${uploaded} Foto(s) für ${participantName} hochgeladen.`);
+      if (skipped.length > 0) {
+        const skipHint = skipped
+          .slice(0, 3)
+          .map((s) => `${s.filename}: ${s.reason}`)
+          .join("; ");
+        onMessage(
+          `${uploaded} Foto(s) für ${participantName} hochgeladen. Übersprungen: ${skipHint}${skipped.length > 3 ? " …" : ""}`,
+        );
+      } else {
+        onMessage(`${uploaded} Foto(s) für ${participantName} hochgeladen.`);
+      }
       refresh();
     });
   }
 
-  function handleDelete(photo: ParticipantPhoto) {
-    if (
-      !window.confirm(
-        `„${photo.filename}“ wirklich löschen? Dies kann nicht rückgängig gemacht werden.`,
-      )
-    ) {
-      return;
-    }
+  async function handleDelete(photo: ParticipantPhoto) {
+    const ok = await confirm({
+      title: "Foto löschen?",
+      description: `„${photo.filename}“ wird endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.`,
+      confirmLabel: "Löschen",
+      variant: "destructive",
+    });
+    if (!ok) return;
 
     onMessage(null);
     startTransition(async () => {
@@ -235,6 +263,14 @@ export function ParticipantPhotoManager({
         </Button>
       </div>
 
+      <PhotoUploadReleaseOptions
+        className="mt-4"
+        value={releaseMode}
+        onChange={setReleaseMode}
+        notifyCustomer={notifyCustomer}
+        onNotifyChange={setNotifyCustomer}
+      />
+
       <div
         className={cn(
           "mt-3 rounded-lg border-2 border-dashed p-4 text-center transition-colors",
@@ -282,6 +318,16 @@ export function ParticipantPhotoManager({
                     <div className="absolute left-1 top-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
                       {index + 1}
                     </div>
+                    {photo.processingStatus && (
+                      <span
+                        className={cn(
+                          "absolute right-1 top-1 max-w-[calc(100%-0.5rem)] truncate rounded-full px-1.5 py-0.5 text-[9px] font-medium shadow",
+                          photoProcessingStatusColors[photo.processingStatus],
+                        )}
+                      >
+                        {photoProcessingStatusLabels[photo.processingStatus]}
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-2 p-2">
@@ -437,6 +483,7 @@ export function ParticipantPhotoManager({
           e.target.value = "";
         }}
       />
+      {confirmDialog}
     </div>
   );
 }

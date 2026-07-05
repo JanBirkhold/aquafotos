@@ -165,6 +165,47 @@ export function buildVoucherRedeemGuideBlock(redeemUrl: string): string {
 </ol>`;
 }
 
+export function buildBankTransferBlock(params: {
+  accountHolder: string;
+  bankName: string;
+  iban: string;
+  bic: string;
+  amount: string;
+  reference: string;
+}): string {
+  const iban = params.iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
+  return `<div style="margin:1em 0;padding:1em;border:1px solid #fcd34d;border-radius:12px;background:#fffbeb">
+<p><strong>Zahlung per Überweisung</strong></p>
+<p>Empfänger: ${params.accountHolder}<br>
+${params.bankName ? `Bank: ${params.bankName}<br>` : ""}
+IBAN: <code>${iban}</code><br>
+${params.bic ? `BIC: ${params.bic}<br>` : ""}
+Betrag: <strong>${params.amount}</strong><br>
+Verwendungszweck: <code>${params.reference}</code></p>
+</div>`;
+}
+
+export function buildVoucherOrderItemsBlock(
+  items: { title: string; price: string; preferredDate?: string }[],
+): string {
+  if (items.length === 0) return "";
+  const rows = items
+    .map(
+      (i) =>
+        `<li>${i.title}${i.preferredDate ? ` · Wunschtermin ${i.preferredDate}` : ""} · ${i.price}</li>`,
+    )
+    .join("");
+  return `<p><strong>Bestellte Gutscheine:</strong></p><ul>${rows}</ul>`;
+}
+
+export function buildOrderItemsBlock(
+  items: { label: string; price: string }[],
+): string {
+  if (items.length === 0) return "";
+  const rows = items.map((i) => `<li>${i.label} · ${i.price}</li>`).join("");
+  return `<p><strong>Bestellte Bilder:</strong></p><ul>${rows}</ul>`;
+}
+
 export function buildLocationLine(location?: string): string {
   return location ? ` in ${location}` : "";
 }

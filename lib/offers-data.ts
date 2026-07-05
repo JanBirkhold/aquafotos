@@ -37,6 +37,6 @@ export const offers: Offer[] = [
     image: "/images/gallery/weihnachtsminis-01.webp",
     imageAlt: "Veranstaltungen und WeihnachtsMinis – AquaFotos Barntrup",
     priceHint: "Eventpreise & WeihnachtsMinis – Details auf Anfrage",
-    cta: { label: "Zur Veranstaltung", href: "/veranstaltungen" },
+    cta: { label: "Info & Termine", href: "/info#aktionen" },
   },
 ];

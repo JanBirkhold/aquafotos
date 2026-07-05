@@ -1,6 +1,7 @@
 import { siteConfig } from "./site-config";
 import { galleryItems } from "./gallery-data";
 import { teamMembers } from "./team-data";
+import { getFaqSchemaFromItems } from "@/lib/shooting-info-content";
 
 export function getOrganizationSchema() {
   return {
@@ -103,47 +104,6 @@ export function getBreadcrumbSchema(items: { name: string; url: string }[]) {
   };
 }
 
-export function getFaqSchema() {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "Wo findet die Unterwasserfotografie bei AquaFotos statt?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "AquaFotos bietet professionelle Unterwasserfotografie in Barntrup und der Region Lippe / Ostwestfalen-Lippe (OWL) an.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Erhalte ich hochauflösende Bilder ohne Wasserzeichen?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Ja. Vorschaubilder haben eine geringe Auflösung und ein Wasserzeichen. Nach dem Kauf erhalten Sie hochauflösende Bilddateien ohne Wasserzeichen.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Wie schnell erhalte ich meine Bilder bei Echtzeit-Überweisung?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Bei Echtzeit-Überweisung werden Bilder in der Regel innerhalb weniger Minuten zugesendet – auch an Sonn- und Feiertagen.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Für wen eignen sich Unterwasser-Fotoshootings?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Unsere Shootings eignen sich für Kinder, Familien, Veranstaltungen und besondere Anlässe wie WeihnachtsMinis – liebevoll inszeniert und professionell bearbeitet.",
-        },
-      },
-    ],
-  };
-}
-
 export function getImageGallerySchema() {
   return {
     "@context": "https://schema.org",
@@ -167,7 +127,7 @@ export function getHomepageSchemas() {
     getLocalBusinessSchema(),
     ...getTeamSchemas(),
     getBreadcrumbSchema([{ name: "Start", url: siteConfig.url }]),
-    getFaqSchema(),
+    getFaqSchemaFromItems(),
     getImageGallerySchema(),
   ];
 }

@@ -30,7 +30,7 @@ export async function AdminReorderNotice() {
             <div>
               <p className="font-mono text-sm font-medium text-amber-950">{order.orderNumber}</p>
               <p className="text-xs text-amber-900/70">
-                {order.items[0]?.photo.filename ?? "—"} · {order.items.length} Bild
+                {order.items[0]?.photo?.filename ?? "—"} · {order.items.length} Bild
                 {order.items.length !== 1 ? "er" : ""} · {orderStatusLabels[order.status]}
               </p>
             </div>

@@ -1,34 +1,35 @@
 "use server";
 
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { writeFile } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth, isStaffRole } from "@/lib/auth";
 import {
+  bulkUploadPhotosForEvent,
+  revalidatePhotoUploadContext,
+  uploadPhotosForParticipant,
+  type BulkUploadResult,
+} from "@/lib/admin-photo-upload";
+import {
   deletePhotoFile,
-  normalizeAssignedPhotoFilename,
   photoFilesystemPath,
   renamePhotoFile,
-  resolveUniqueFilename,
   sanitizePhotoFilename,
 } from "@/lib/admin-photos";
 import { prisma } from "@/lib/prisma";
 import {
   sendEventCancelled,
-  sendNewEventNotification,
   sendShootingReminder,
 } from "@/lib/email";
+import { publishShootingEventRecord } from "@/lib/event-publish";
 import {
   buildAccessCode,
-  buildPhotoFilename,
   buildQrPayload,
-  formatParticipantCode,
   generateQrDataUrl,
-  parseParticipantNumberFromFilename,
 } from "@/lib/qr-utils";
+import { getDefaultShootingLocation } from "@/lib/default-shooting-location";
 import { sendParticipantConfirmationEmail } from "@/lib/participant-email";
 import { markParticipantConfirmed } from "@/lib/actions/participant-workflow";
-import { shootingTypeLabels } from "@/lib/shooting-types";
+import { getCategoryForShootingType } from "@/lib/shooting-types";
 import type { EventStatus, ShootingCategory, ShootingType } from "@prisma/client";
 
 async function requireStaff() {
@@ -134,46 +135,21 @@ export async function publishEvent(
   overrides?: { subject?: string; bodyHtml?: string },
 ) {
   await requireStaff();
-
-  const event = await prisma.shootingEvent.update({
-    where: { id: eventId },
-    data: { status: "PUBLISHED", publishedAt: new Date() },
-  });
-
-  const subscribers = await prisma.shootingNotification.findMany({
-    where: {
-      active: true,
-      shootingType: event.shootingType,
-      OR: [{ location: null }, { location: event.location }],
-    },
-  });
-
-  const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://aquafotos.com"}/shootings/${event.id}`;
-
-  for (const sub of subscribers) {
-    await sendNewEventNotification({
-      to: sub.email,
-      shootingType: shootingTypeLabels[event.shootingType],
-      location: event.location,
-      eventTitle: event.title,
-      url,
-      overrides,
-    });
-  }
-
-  revalidatePath("/admin");
-  revalidatePath("/shootings");
-  return { success: true, notified: subscribers.length };
+  const { notified } = await publishShootingEventRecord(eventId, overrides);
+  return { success: true, notified };
 }
 
-export async function addParticipantManual(data: {
-  eventId: string;
-  parentName: string;
-  childName: string;
-  email: string;
-  phone: string;
-  slotId?: string;
-}) {
+export async function addParticipantManual(
+  data: {
+    eventId: string;
+    parentName: string;
+    childName: string;
+    email: string;
+    phone: string;
+    slotId?: string;
+  },
+  options?: { skipConfirmationEmail?: boolean },
+) {
   await requireStaff();
 
   const event = await prisma.shootingEvent.findUniqueOrThrow({
@@ -208,10 +184,118 @@ export async function addParticipantManual(data: {
     },
   });
 
-  await sendParticipantConfirmationEmail(participant.id);
+  if (!options?.skipConfirmationEmail) {
+    await sendParticipantConfirmationEmail(participant.id);
+  }
 
   revalidatePath(`/admin/shootings/${data.eventId}`);
   return participant;
+}
+
+export async function ensureIndividualShootingGallery(
+  individualShootingId: string,
+  options?: { sendEmail?: boolean },
+) {
+  await requireStaff();
+
+  const req = await prisma.individualShootingRequest.findFirst({
+    where: {
+      id: individualShootingId,
+      confirmedDate: { not: null },
+      voucherId: { not: null },
+      eventId: null,
+    },
+    include: {
+      voucher: { include: { product: true } },
+      participant: { include: { galleryAccess: true } },
+    },
+  });
+
+  if (!req?.confirmedDate) {
+    return { error: "Einzelshooting nicht gefunden oder Termin nicht bestätigt." };
+  }
+
+  if (req.participantId && req.participant) {
+    if (options?.sendEmail) {
+      const mail = await sendParticipantConfirmationEmail(req.participantId);
+      if (mail.error) return { error: mail.error };
+    }
+
+    revalidatePath(`/admin/shootings/einzel/${req.id}`);
+    return {
+      success: true,
+      participantId: req.participantId,
+      eventId: req.participant.eventId,
+      accessCode: req.participant.galleryAccess?.accessCode ?? null,
+    };
+  }
+
+  const productTitle = req.voucher?.product.title ?? "Einzelshooting";
+  const event = await prisma.shootingEvent.create({
+    data: {
+      title: `${productTitle} – ${req.parentName}`,
+      description: req.voucher
+        ? `Gutschein-Einzelshooting ${req.voucher.code}`
+        : "Gutschein-Einzelshooting",
+      category: getCategoryForShootingType(req.shootingType),
+      shootingType: req.shootingType,
+      date: req.confirmedDate,
+      startTime: req.confirmedTime,
+      location: req.confirmedLocation ?? getDefaultShootingLocation(),
+      maxParticipants: 1,
+      status: "DRAFT",
+    },
+  });
+
+  const participant = await addParticipantManual(
+    {
+      eventId: event.id,
+      parentName: req.parentName,
+      childName: req.childName?.trim() || req.parentName,
+      email: req.email,
+      phone: req.phone,
+    },
+    { skipConfirmationEmail: true },
+  );
+
+  await prisma.individualShootingRequest.update({
+    where: { id: req.id },
+    data: { participantId: participant.id },
+  });
+
+  await markParticipantConfirmed(participant.id);
+
+  let accessCode: string | null = null;
+  const access = await prisma.galleryAccess.findUnique({
+    where: { participantId: participant.id },
+  });
+  accessCode = access?.accessCode ?? null;
+
+  if (options?.sendEmail !== false) {
+    const mail = await sendParticipantConfirmationEmail(participant.id);
+    if (mail.error) {
+      revalidatePath(`/admin/shootings/einzel/${req.id}`);
+      revalidatePath("/admin/shootings");
+      return {
+        success: true,
+        participantId: participant.id,
+        eventId: event.id,
+        accessCode,
+        message: "Galerie eingerichtet, aber E-Mail konnte nicht gesendet werden.",
+      };
+    }
+  }
+
+  revalidatePath(`/admin/shootings/einzel/${req.id}`);
+  revalidatePath("/admin/shootings");
+  revalidatePath(`/admin/shootings/${event.id}`);
+
+  return {
+    success: true,
+    participantId: participant.id,
+    eventId: event.id,
+    accessCode,
+  };
 }
 
 export async function resendParticipantConfirmation(
@@ -261,18 +345,25 @@ export async function updatePricing(data: {
 }) {
   await requireStaff();
 
+  const { validatePricingCents } = await import("@/lib/form-validation");
+  const parsed = validatePricingCents(data);
+
+  if (!parsed.ok) {
+    return { error: parsed.error };
+  }
+
   await prisma.pricingConfig.updateMany({ data: { active: false } });
 
   await prisma.pricingConfig.create({
     data: {
-      firstImagePrice: data.firstImagePrice,
-      secondImagePrice: data.secondImagePrice,
-      additionalPrice: data.additionalPrice,
+      ...parsed.pricing,
       active: true,
     },
   });
 
   revalidatePath("/admin/preise");
+  revalidatePath("/gutschein");
+  revalidatePath("/info");
   return { success: true };
 }
 
@@ -471,221 +562,46 @@ export async function ensureParticipantQrCodes(eventId: string) {
   return { fixed };
 }
 
-type ParticipantPhotoTarget = {
-  id: string;
-  participantNumber: number;
-  qrCode: string | null;
-};
-
-async function persistParticipantPhoto(
-  eventId: string,
-  participant: ParticipantPhotoTarget,
-  file: File,
-  sortOrder: number,
-  preferredFilename?: string,
-): Promise<string> {
-  const uploadDir = path.join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "events",
-    eventId,
-    participant.id,
-  );
-  await mkdir(uploadDir, { recursive: true });
-
-  const baseFilename =
-    preferredFilename ??
-    buildPhotoFilename(participant.participantNumber, file.name);
-  const filename = await resolveUniqueFilename(uploadDir, baseFilename);
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(uploadDir, filename), buffer);
-
-  const storageKey = `/uploads/events/${eventId}/${participant.id}/${filename}`;
-  await prisma.photo.create({
-    data: {
-      eventId,
-      participantId: participant.id,
-      filename,
-      storageKey,
-      previewKey: storageKey,
-      qrDetectedCode: participant.qrCode,
-      processingStatus: "READY",
-      sortOrder,
-    },
-  });
-
-  return filename;
-}
-
-export type BulkPhotoUploadResult = {
-  success: true;
-  uploaded: number;
-  assigned: { participantNumber: number; childName: string; count: number }[];
-  skipped: { filename: string; reason: string }[];
-};
+export type BulkPhotoUploadResult = BulkUploadResult;
 
 export async function bulkUploadEventPhotos(
   formData: FormData,
 ): Promise<BulkPhotoUploadResult | { error: string }> {
-  await requireStaff();
-
-  const eventId = formData.get("eventId") as string;
-  if (!eventId) return { error: "Event fehlt." };
-
-  const files = formData
-    .getAll("photos")
-    .filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length === 0) return { error: "Keine Dateien ausgewählt." };
-
-  const participants = await prisma.participant.findMany({
-    where: { eventId },
-    include: { qrCode: true },
-  });
-
-  if (participants.length === 0) {
-    return { error: "Keine Teilnehmer im Shooting – zuerst Teilnehmer anlegen." };
+  try {
+    await requireStaff();
+    const eventId = String(formData.get("eventId") ?? "");
+    const files = formData
+      .getAll("photos")
+      .filter((f): f is File => f instanceof File && f.size > 0);
+    return await bulkUploadPhotosForEvent({ eventId, files });
+  } catch (error) {
+    console.error("[bulkUploadEventPhotos]", error);
+    return { error: "Bulk-Upload fehlgeschlagen." };
   }
-
-  const byNumber = new Map(participants.map((p) => [p.participantNumber, p]));
-  const sortOrders = new Map<string, number>(
-    await Promise.all(
-      participants.map(async (p) => [
-        p.id,
-        await prisma.photo.count({ where: { participantId: p.id } }),
-      ] as const),
-    ),
-  );
-
-  const assignedCounts = new Map<number, number>();
-  const skipped: BulkPhotoUploadResult["skipped"] = [];
-  const affectedParticipantIds = new Set<string>();
-  let uploaded = 0;
-
-  for (const file of files) {
-    const participantNumber = parseParticipantNumberFromFilename(file.name);
-    if (participantNumber === null) {
-      skipped.push({
-        filename: file.name,
-        reason: "Keine Teilnehmer-Nr. im Dateinamen (Format: 001_bild.jpg)",
-      });
-      continue;
-    }
-
-    const participant = byNumber.get(participantNumber);
-    if (!participant) {
-      skipped.push({
-        filename: file.name,
-        reason: `Teilnehmer #${formatParticipantCode(participantNumber)} ist nicht im Shooting`,
-      });
-      continue;
-    }
-
-    const preferredFilename = normalizeAssignedPhotoFilename(
-      file.name,
-      participantNumber,
-    );
-    if (!preferredFilename) {
-      skipped.push({
-        filename: file.name,
-        reason: "Ungültiger Dateiname oder Bildformat",
-      });
-      continue;
-    }
-
-    try {
-      const sortOrder = sortOrders.get(participant.id) ?? 0;
-      await persistParticipantPhoto(
-        eventId,
-        {
-          id: participant.id,
-          participantNumber: participant.participantNumber,
-          qrCode: participant.qrCode?.code ?? null,
-        },
-        file,
-        sortOrder,
-        preferredFilename,
-      );
-      sortOrders.set(participant.id, sortOrder + 1);
-      assignedCounts.set(
-        participantNumber,
-        (assignedCounts.get(participantNumber) ?? 0) + 1,
-      );
-      affectedParticipantIds.add(participant.id);
-      uploaded++;
-    } catch {
-      skipped.push({
-        filename: file.name,
-        reason: "Speichern fehlgeschlagen",
-      });
-    }
-  }
-
-  for (const participantId of affectedParticipantIds) {
-    await revalidateParticipantGallery(participantId);
-  }
-  revalidatePath(`/admin/shootings/${eventId}`);
-
-  return {
-    success: true,
-    uploaded,
-    assigned: Array.from(assignedCounts.entries())
-      .map(([participantNumber, count]) => ({
-        participantNumber,
-        childName: byNumber.get(participantNumber)!.childName,
-        count,
-      }))
-      .sort((a, b) => a.participantNumber - b.participantNumber),
-    skipped,
-  };
 }
 
 export async function uploadParticipantPhotos(formData: FormData) {
-  await requireStaff();
-
-  const eventId = formData.get("eventId") as string;
-  const participantId = formData.get("participantId") as string;
-  if (!eventId || !participantId) {
-    return { error: "Event oder Teilnehmer fehlt." };
+  try {
+    await requireStaff();
+    const eventId = String(formData.get("eventId") ?? "");
+    const participantId = String(formData.get("participantId") ?? "");
+    const files = formData
+      .getAll("photos")
+      .filter((f): f is File => f instanceof File && f.size > 0);
+    return await uploadPhotosForParticipant({ eventId, participantId, files });
+  } catch (error) {
+    console.error("[uploadParticipantPhotos]", error);
+    return { error: "Upload fehlgeschlagen." };
   }
-
-  const participant = await prisma.participant.findFirst({
-    where: { id: participantId, eventId },
-    include: { qrCode: true },
-  });
-  if (!participant) return { error: "Teilnehmer nicht gefunden." };
-
-  const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length === 0) return { error: "Keine Dateien ausgewählt." };
-
-  let uploaded = 0;
-  const existingCount = await prisma.photo.count({ where: { participantId } });
-
-  for (const file of files) {
-    await persistParticipantPhoto(
-      eventId,
-      {
-        id: participant.id,
-        participantNumber: participant.participantNumber,
-        qrCode: participant.qrCode?.code ?? null,
-      },
-      file,
-      existingCount + uploaded,
-    );
-    uploaded++;
-  }
-
-  await revalidateParticipantGallery(participant.id);
-  revalidatePath(`/admin/shootings/${eventId}`);
-  return { success: true, uploaded };
 }
 
 async function revalidateParticipantGallery(participantId: string) {
-  const galleryAccess = await prisma.galleryAccess.findUnique({
-    where: { participantId },
+  const participant = await prisma.participant.findUnique({
+    where: { id: participantId },
+    select: { eventId: true },
   });
-  if (galleryAccess) {
-    revalidatePath(`/galerie/${galleryAccess.accessCode}`);
+  if (participant) {
+    await revalidatePhotoUploadContext(participant.eventId, participantId);
   }
 }
 

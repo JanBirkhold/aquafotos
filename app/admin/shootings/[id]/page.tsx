@@ -4,6 +4,10 @@ import { QrCode, Upload, Users } from "lucide-react";
 import { ShootingAdminPanel } from "@/components/admin/shooting-admin-panel";
 import { ParticipantWorkflowTable } from "@/components/admin/participant-workflow-table";
 import { getEventById, formatEventDate } from "@/lib/events";
+import {
+  getParticipantOrdersByEventId,
+  serializeParticipantOrdersMap,
+} from "@/lib/shooting-participant-orders";
 import { prisma } from "@/lib/prisma";
 import { shootingTypeLabels } from "@/lib/shooting-types";
 
@@ -36,7 +40,7 @@ export default async function AdminShootingDetailPage({ params }: Props) {
       include: {
         qrCode: true,
         photos: {
-          select: { id: true, filename: true, storageKey: true },
+          select: { id: true, filename: true, storageKey: true, processingStatus: true },
           orderBy: { sortOrder: "asc" },
         },
       },
@@ -82,6 +86,9 @@ export default async function AdminShootingDetailPage({ params }: Props) {
   );
 
   const totalPhotos = participants.reduce((sum, p) => sum + p.photos.length, 0);
+  const ordersByParticipant = serializeParticipantOrdersMap(
+    await getParticipantOrdersByEventId(id),
+  );
 
   return (
     <div className="space-y-8">
@@ -124,7 +131,11 @@ export default async function AdminShootingDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <ParticipantWorkflowTable eventId={event.id} participants={workflowRows} />
+      <ParticipantWorkflowTable
+        eventId={event.id}
+        participants={workflowRows}
+        ordersByParticipant={ordersByParticipant}
+      />
 
       <ShootingAdminPanel
         event={{
@@ -143,6 +154,7 @@ export default async function AdminShootingDetailPage({ params }: Props) {
           allowWaitlist: event.allowWaitlist,
         }}
         participants={serializedParticipants}
+        ordersByParticipant={ordersByParticipant}
       />
     </div>
   );

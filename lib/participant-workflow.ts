@@ -4,7 +4,7 @@ export const participantStatusLabels: Record<ParticipantStatus, string> = {
   INVITED: "Eingeladen",
   CONFIRMED: "Akzeptiert",
   REGISTERED: "Angemeldet",
-  GALLERY_VIEWED: "Fotos gesichtet",
+  GALLERY_VIEWED: "Galerie geöffnet",
   ORDERED: "Bestellt",
   REMINDER_SENT: "Erinnert",
   ATTENDED: "Anwesend",

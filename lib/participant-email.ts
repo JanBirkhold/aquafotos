@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendRegistrationConfirmation } from "@/lib/email";
+import type { EmailDeliveryResult } from "@/lib/email-delivery";
 import { isCoupleShooting } from "@/lib/registration-fields";
 
 function appBaseUrl() {
@@ -29,29 +30,42 @@ export async function sendParticipantConfirmationEmail(
     year: "numeric",
   });
 
-  await sendRegistrationConfirmation({
-    to: participant.email,
-    parentName: participant.parentName,
-    childName: participant.childName,
-    eventTitle: participant.event.title,
-    date: dateStr,
-    time: participant.event.startTime ?? undefined,
-    location: participant.event.location,
-    coupleMode: isCoupleShooting(participant.event.category),
-    accessCode,
-    galleryUrl: accessCode
-      ? `${appBaseUrl()}/bilder-bestellen?code=${encodeURIComponent(accessCode)}`
-      : undefined,
-    isInvitation: participant.registrationSource === "MANUAL",
-    qrDataUrl: participant.qrCode?.qrDataUrl,
-    participantNumber: participant.participantNumber,
-    overrides,
-  });
+  let delivery: EmailDeliveryResult = { sent: false, configured: false };
 
-  await prisma.participant.update({
-    where: { id: participantId },
-    data: { confirmationSentAt: new Date() },
-  });
+  try {
+    delivery = await sendRegistrationConfirmation({
+      to: participant.email,
+      parentName: participant.parentName,
+      childName: participant.childName,
+      eventTitle: participant.event.title,
+      date: dateStr,
+      time: participant.event.startTime ?? undefined,
+      location: participant.event.location,
+      coupleMode: isCoupleShooting(participant.event.category),
+      accessCode,
+      galleryUrl: accessCode
+        ? `${appBaseUrl()}/bilder-bestellen?code=${encodeURIComponent(accessCode)}`
+        : undefined,
+      isInvitation: participant.registrationSource === "MANUAL",
+      qrDataUrl: participant.qrCode?.qrDataUrl,
+      participantNumber: participant.participantNumber,
+      overrides,
+    });
+  } catch (error) {
+    console.error("[sendParticipantConfirmationEmail]", error);
+    delivery = {
+      sent: false,
+      configured: true,
+      error: error instanceof Error ? error.message : "E-Mail fehlgeschlagen",
+    };
+  }
 
-  return { success: true };
+  if (delivery.sent) {
+    await prisma.participant.update({
+      where: { id: participantId },
+      data: { confirmationSentAt: new Date() },
+    });
+  }
+
+  return { success: true, delivery };
 }

@@ -20,7 +20,9 @@ export async function getPreviouslyOrderedPhotoIds(
     distinct: ["photoId"],
   });
 
-  return new Set(items.map((item) => item.photoId));
+  return new Set(
+    items.map((item) => item.photoId).filter((id): id is string => Boolean(id)),
+  );
 }
 
 export async function orderIncludesReorderPhotos(photoIds: string[]): Promise<boolean> {
@@ -44,7 +46,9 @@ export async function getReorderPhotoIdsForOrder(orderId: string): Promise<Set<s
 
   if (!order || order.items.length === 0) return new Set();
 
-  const photoIds = order.items.map((item) => item.photoId);
+  const photoIds = order.items
+    .map((item) => item.photoId)
+    .filter((id): id is string => Boolean(id));
 
   const priorItems = await prisma.orderItem.findMany({
     where: {
@@ -59,7 +63,9 @@ export async function getReorderPhotoIdsForOrder(orderId: string): Promise<Set<s
     distinct: ["photoId"],
   });
 
-  return new Set(priorItems.map((item) => item.photoId));
+  return new Set(
+    priorItems.map((item) => item.photoId).filter((id): id is string => Boolean(id)),
+  );
 }
 
 export async function getOpenReorderOrders(limit = 5) {

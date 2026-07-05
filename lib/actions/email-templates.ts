@@ -13,6 +13,7 @@ import {
   listEmailTemplates,
 } from "@/lib/email-templates";
 import { sendRawEmail } from "@/lib/email";
+import { emailFeedbackFromDelivery } from "@/lib/email-delivery";
 
 async function requireStaff() {
   const session = await auth();
@@ -213,6 +214,12 @@ export async function sendPreviewTestEmail(params: {
 }) {
   await requireStaff();
   if (!params.to.includes("@")) return { error: "Ungültige E-Mail." };
-  await sendRawEmail(params);
-  return { success: true };
+  const delivery = await sendRawEmail(params);
+  const feedback = emailFeedbackFromDelivery(delivery);
+  if (feedback.error) return { error: feedback.error };
+  return {
+    success: true,
+    emailSent: feedback.emailSent,
+    emailNotice: feedback.emailNotice,
+  };
 }

@@ -26,7 +26,9 @@ import {
 import { BulkPhotoUpload } from "@/components/admin/bulk-photo-upload";
 import { NotificationComposeDialog } from "@/components/admin/notification-compose-dialog";
 import { ParticipantPhotoManager } from "@/components/admin/participant-photo-manager";
+import { ShootingParticipantMenu } from "@/components/admin/shooting-participant-menu";
 import { CategoryShootingSelect } from "@/components/admin/category-shooting-select";
+import type { ParticipantOrderSummary } from "@/lib/shooting-participant-orders";
 import { EMAIL_TEMPLATE_KEYS } from "@/lib/email-template-definitions";
 import {
   getEventCancelledVariables,
@@ -39,7 +41,8 @@ import {
   participantStatusColors,
   participantStatusLabels,
 } from "@/lib/participant-workflow";
-import type { EventStatus, ParticipantSource, ParticipantStatus, ShootingCategory, ShootingType } from "@prisma/client";
+import { orderStatusLabels } from "@/lib/order-workflow";
+import type { EventStatus, ParticipantSource, ParticipantStatus, PhotoProcessingStatus, ShootingCategory, ShootingType } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
 export type AdminParticipant = {
@@ -54,7 +57,7 @@ export type AdminParticipant = {
   qrDataUrl: string | null;
   qrCode: string | null;
   photoCount: number;
-  photos: { id: string; filename: string; storageKey: string }[];
+  photos: { id: string; filename: string; storageKey: string; processingStatus?: PhotoProcessingStatus }[];
 };
 
 type Props = {
@@ -74,6 +77,7 @@ type Props = {
     allowWaitlist: boolean;
   };
   participants: AdminParticipant[];
+  ordersByParticipant?: Record<string, ParticipantOrderSummary[]>;
 };
 
 type ComposeState = {
@@ -85,7 +89,11 @@ type ComposeState = {
   onSend: (draft: { subject: string; bodyHtml: string }) => Promise<void>;
 };
 
-export function ShootingAdminPanel({ event, participants }: Props) {
+export function ShootingAdminPanel({
+  event,
+  participants,
+  ordersByParticipant = {},
+}: Props) {
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(participants.map((p) => p.id)),
   );
@@ -466,12 +474,23 @@ export function ShootingAdminPanel({ event, participants }: Props) {
                     aria-label={`${p.childName} auswählen`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="font-mono text-xs text-aqua-600">
-                      #{String(p.participantNumber).padStart(3, "0")}
-                    </p>
-                    <p className="font-medium">{p.childName}</p>
-                    <p className="text-sm text-slate-500">{p.parentName}</p>
-                    <p className="text-xs text-slate-400">{p.email}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs text-aqua-600">
+                          #{String(p.participantNumber).padStart(3, "0")}
+                        </p>
+                        <p className="font-medium">{p.childName}</p>
+                        <p className="text-sm text-slate-500">{p.parentName}</p>
+                        <p className="text-xs text-slate-400">{p.email}</p>
+                      </div>
+                      <ShootingParticipantMenu
+                        participantId={p.id}
+                        participantLabel={p.childName}
+                        eventId={event.id}
+                        status={p.status}
+                        orders={ordersByParticipant[p.id] ?? []}
+                      />
+                    </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <span
                         className={cn(
@@ -484,6 +503,15 @@ export function ShootingAdminPanel({ event, participants }: Props) {
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                         {participantSourceLabels[p.registrationSource]}
                       </span>
+                      {(ordersByParticipant[p.id] ?? []).map((order) => (
+                        <span
+                          key={order.orderId}
+                          className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-800"
+                          title={orderStatusLabels[order.status]}
+                        >
+                          {order.isReorder ? "Nachbestellung" : "Bestellung"} · {order.orderNumber}
+                        </span>
+                      ))}
                     </div>
 
                     {p.qrDataUrl ? (

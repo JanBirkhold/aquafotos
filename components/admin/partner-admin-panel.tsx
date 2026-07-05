@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,11 +30,30 @@ export function PartnerAdminPanel({ partners }: { partners: PartnerRow[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { confirm, confirmDialog } = useConfirm();
 
   const editing = useMemo(
     () => partners.find((p) => p.id === editingId) ?? null,
     [partners, editingId],
   );
+
+  async function handleDeletePartner(partner: PartnerRow) {
+    const ok = await confirm({
+      title: `${partner.name} löschen?`,
+      description:
+        "Der Partner wird endgültig entfernt und erscheint nicht mehr auf der Website. Verknüpfte Shootings bleiben ohne Partner-Zuordnung.",
+      confirmLabel: "Endgültig löschen",
+      variant: "destructive",
+    });
+    if (!ok) return;
+
+    startTransition(async () => {
+      await deletePartner(partner.id);
+      setMessage("Partner gelöscht.");
+      setShowForm(false);
+      setEditingId(null);
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -75,6 +95,7 @@ export function PartnerAdminPanel({ partners }: { partners: PartnerRow[] }) {
             setShowForm(false);
             setEditingId(null);
           }}
+          onDelete={editing ? () => void handleDeletePartner(editing) : undefined}
           onSubmit={(fd) =>
             startTransition(async () => {
               if (editing) {
@@ -150,15 +171,10 @@ export function PartnerAdminPanel({ partners }: { partners: PartnerRow[] }) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="border-red-200 text-red-700"
+                  className="border-red-200 text-red-700 hover:bg-red-50"
                   disabled={pending}
-                  onClick={() => {
-                    if (!confirm(`${p.name} deaktivieren?`)) return;
-                    startTransition(async () => {
-                      await deletePartner(p.id);
-                      setMessage("Partner deaktiviert.");
-                    });
-                  }}
+                  aria-label={`${p.name} löschen`}
+                  onClick={() => void handleDeletePartner(p)}
                 >
                   <Trash2 className="h-3 w-3" aria-hidden />
                 </Button>
@@ -167,6 +183,7 @@ export function PartnerAdminPanel({ partners }: { partners: PartnerRow[] }) {
           ))}
         </ul>
       )}
+      {confirmDialog}
     </div>
   );
 }
@@ -175,11 +192,13 @@ function PartnerForm({
   partner,
   pending,
   onCancel,
+  onDelete,
   onSubmit,
 }: {
   partner: PartnerRow | null;
   pending: boolean;
   onCancel: () => void;
+  onDelete?: () => void;
   onSubmit: (fd: FormData) => void;
 }) {
   return (
@@ -264,14 +283,28 @@ function PartnerForm({
           )}
         </div>
       </div>
-      <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>
-          {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {partner ? "Speichern" : "Partner anlegen"}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Abbrechen
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-2">
+          <Button type="submit" disabled={pending}>
+            {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {partner ? "Speichern" : "Partner anlegen"}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+            Abbrechen
+          </Button>
+        </div>
+        {partner && onDelete && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            className="border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 hover:text-red-800"
+            onClick={onDelete}
+          >
+            <Trash2 className="mr-2 h-4 w-4" aria-hidden />
+            Partner löschen
+          </Button>
+        )}
       </div>
     </form>
   );

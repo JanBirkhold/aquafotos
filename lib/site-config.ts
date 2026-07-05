@@ -48,11 +48,14 @@ export const siteConfig = {
   ],
   nav: [
     { label: "Start", href: "/" },
+    { label: "Info & FAQ", href: "/info" },
     { label: "Gutschein", href: "/gutschein" },
-    { label: "Bilder bestellen", href: "/bilder-bestellen" },
     { label: "Partner", href: "/partner" },
     { label: "Kontakt", href: "/kontakt" },
   ],
+  /** Leer lassen, wenn kein Kleinunternehmer-Hinweis auf Rechnungen nötig ist. */
+  invoiceSmallBusinessNotice:
+    "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
 } as const;
 
 export type GalleryCategory =

@@ -1,13 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Loader2, Trash2 } from "lucide-react";
-import {
-  createVoucherCheckout,
-  removeVoucherFromCart,
-  updateVoucherCartItem,
-} from "@/lib/actions/voucher";
+import { createVoucherCheckout, removeVoucherFromCart } from "@/lib/actions/voucher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,20 +17,47 @@ type Props = {
 };
 
 export function VoucherCartView({ cart }: Props) {
-  const [pending, startTransition] = useTransition();
+  const [checkoutPending, startCheckoutTransition] = useTransition();
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
-  function saveItem(
-    itemId: string,
-    data: { recipientName?: string; preferredDate?: string; personalMessage?: string },
-  ) {
-    startTransition(async () => {
-      const result = await updateVoucherCartItem(itemId, data);
+  async function handleRemove(itemId: string) {
+    if (removingId || checkoutPending) return;
+
+    setRemovingId(itemId);
+    try {
+      const result = await removeVoucherFromCart(itemId);
       if (result.error) alert(result.error);
-    });
+    } finally {
+      setRemovingId(null);
+    }
   }
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_320px]">
+    <form
+      className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_320px]"
+      action={(fd) =>
+        startCheckoutTransition(async () => {
+          const items = cart.items.map((item) => ({
+            itemId: item.id,
+            recipientName: (fd.get(`recipientName-${item.id}`) as string) || undefined,
+            personalMessage: (fd.get(`personalMessage-${item.id}`) as string) || undefined,
+          }));
+
+          const result = await createVoucherCheckout({
+            buyerName: fd.get("buyerName") as string,
+            buyerEmail: fd.get("buyerEmail") as string,
+            bindingConfirmed: fd.get("bindingConfirmed") === "on",
+            items,
+          });
+
+          if (result.error) {
+            alert(result.error);
+            return;
+          }
+          if (result.url) window.location.href = result.url;
+        })
+      }
+    >
       <div className="space-y-4">
         {cart.items.map((item) => (
           <article
@@ -55,53 +78,37 @@ export function VoucherCartView({ cart }: Props) {
                 type="button"
                 variant="outline"
                 size="icon"
-                disabled={pending}
+                disabled={removingId === item.id || checkoutPending}
+                aria-busy={removingId === item.id}
                 aria-label="Gutschein entfernen"
-                onClick={() =>
-                  startTransition(async () => {
-                    await removeVoucherFromCart(item.id);
-                  })
-                }
+                onClick={() => handleRemove(item.id)}
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                {removingId === item.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                )}
               </Button>
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor={`recipient-${item.id}`}>Beschenkte Person (optional)</Label>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor={`recipientName-${item.id}`}>Beschenkte Person (optional)</Label>
                 <Input
-                  id={`recipient-${item.id}`}
+                  id={`recipientName-${item.id}`}
+                  name={`recipientName-${item.id}`}
                   defaultValue={item.recipientName ?? ""}
                   placeholder="z. B. Maria"
-                  onBlur={(e) =>
-                    saveItem(item.id, { recipientName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`date-${item.id}`}>Wunschtermin zur Anmeldung *</Label>
-                <Input
-                  id={`date-${item.id}`}
-                  type="date"
-                  required
-                  defaultValue={item.preferredDate}
-                  min={new Date().toISOString().slice(0, 10)}
-                  onBlur={(e) =>
-                    saveItem(item.id, { preferredDate: e.target.value })
-                  }
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor={`message-${item.id}`}>Persönliche Nachricht (optional)</Label>
+                <Label htmlFor={`personalMessage-${item.id}`}>Persönliche Nachricht (optional)</Label>
                 <Input
-                  id={`message-${item.id}`}
+                  id={`personalMessage-${item.id}`}
+                  name={`personalMessage-${item.id}`}
                   defaultValue={item.personalMessage}
                   placeholder="Alles Gute zum Geburtstag!"
                   maxLength={500}
-                  onBlur={(e) =>
-                    saveItem(item.id, { personalMessage: e.target.value })
-                  }
                 />
               </div>
             </div>
@@ -112,31 +119,15 @@ export function VoucherCartView({ cart }: Props) {
       <aside className="h-fit rounded-2xl border border-aqua-100 bg-white p-6 shadow-sm">
         <h2 className="font-display text-lg font-semibold text-aqua-900">Zusammenfassung</h2>
         <p className="mt-2 text-sm text-slate-600">
-          {cart.count} Gutschein{cart.count !== 1 ? "e" : ""} · Code & QR-Code erhalten Sie per
-          E-Mail nach dem Kauf.
+          Zahlung ausschließlich per <strong>Überweisung</strong>. Code & QR erhalten Sie per
+          E-Mail, sobald wir den Zahlungseingang geprüft haben.
         </p>
         <p className="mt-4 flex justify-between border-t border-slate-100 pt-4 font-semibold text-aqua-900">
           <span>Gesamt</span>
           <span>{formatEuro(cart.totalCents)}</span>
         </p>
 
-        <form
-          className="mt-6 space-y-4"
-          action={(fd) =>
-            startTransition(async () => {
-              const result = await createVoucherCheckout({
-                buyerName: fd.get("buyerName") as string,
-                buyerEmail: fd.get("buyerEmail") as string,
-                bindingConfirmed: fd.get("bindingConfirmed") === "on",
-              });
-              if (result.error) {
-                alert(result.error);
-                return;
-              }
-              if (result.url) window.location.href = result.url;
-            })
-          }
-        >
+        <div className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="buyerName">Ihr Name *</Label>
             <Input id="buyerName" name="buyerName" required autoComplete="name" />
@@ -153,24 +144,26 @@ export function VoucherCartView({ cart }: Props) {
           </div>
           <label className="flex items-start gap-2 text-sm text-slate-600">
             <input type="checkbox" name="bindingConfirmed" required className="mt-1" />
-            <span>Ich bestelle verbindlich die ausgewählten Gutscheine. *</span>
+            <span>
+              Ich bestelle verbindlich und überweise den Betrag innerhalb von 7 Tagen. *
+            </span>
           </label>
-          <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? (
+          <Button type="submit" className="w-full" disabled={checkoutPending || removingId !== null}>
+            {checkoutPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Wird verarbeitet…
               </>
             ) : (
-              "Gutschein kaufen"
+              "Verbindlich bestellen"
             )}
           </Button>
-        </form>
+        </div>
 
         <Button asChild variant="link" className="mt-3 h-auto w-full p-0">
           <Link href="/gutschein">← Weitere Gutscheine</Link>
         </Button>
       </aside>
-    </div>
+    </form>
   );
 }

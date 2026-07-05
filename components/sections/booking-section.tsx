@@ -1,26 +1,34 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useActionState } from "react";
 import { Calendar, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FormShootingTypeSelect } from "@/components/forms/form-shooting-type-select";
+import { requestIndividualShooting } from "@/lib/actions/events";
+import { shootingTypeLabels } from "@/lib/shooting-types";
+import type { ShootingType } from "@prisma/client";
+
+const underwaterOptions = (
+  [
+    "UNDERWATER_BABY",
+    "UNDERWATER_TODDLER",
+    "UNDERWATER_CHILD",
+    "UNDERWATER_FAMILY",
+    "UNDERWATER_SIBLINGS",
+    "CHRISTMAS_MINIS",
+    "OTHER",
+  ] as ShootingType[]
+).map((type) => ({ value: type, label: shootingTypeLabels[type] }));
 
 export function BookingSection() {
-  const [submitted, setSubmitted] = useState(false);
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setSubmitted(true);
-  }
+  const [state, action, pending] = useActionState(
+    async (_p: { error?: string; success?: boolean } | null, fd: FormData) =>
+      requestIndividualShooting(fd),
+    null,
+  );
 
   return (
     <section
@@ -46,7 +54,7 @@ export function BookingSection() {
           </p>
         </div>
 
-        {submitted ? (
+        {state?.success ? (
           <div
             className="mt-10 rounded-3xl glass p-8 text-center"
             role="status"
@@ -61,14 +69,19 @@ export function BookingSection() {
           </div>
         ) : (
           <form
-            onSubmit={handleSubmit}
+            action={action}
             className="mt-10 space-y-5 rounded-3xl glass p-6 sm:p-8"
-            noValidate
           >
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input id="name" name="name" required autoComplete="name" placeholder="Ihr Name" />
+                <Label htmlFor="parentName">Name *</Label>
+                <Input
+                  id="parentName"
+                  name="parentName"
+                  required
+                  autoComplete="name"
+                  placeholder="Ihr Name"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefonnummer *</Label>
@@ -97,23 +110,18 @@ export function BookingSection() {
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="date">Wunschdatum</Label>
-                <Input id="date" name="date" type="date" />
+                <Label htmlFor="preferredDate">Wunschdatum</Label>
+                <Input id="preferredDate" name="preferredDate" type="date" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="shooting-type">Shooting-Art</Label>
-                <Select name="shooting-type">
-                  <SelectTrigger id="shooting-type" aria-label="Shooting-Art wählen">
-                    <SelectValue placeholder="Bitte wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unterwasser">Unterwasser-Shooting</SelectItem>
-                    <SelectItem value="kinder">Kinder</SelectItem>
-                    <SelectItem value="familie">Familie</SelectItem>
-                    <SelectItem value="event">Veranstaltung</SelectItem>
-                    <SelectItem value="weihnachtsminis">WeihnachtsMinis</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="shooting-type">Shooting-Art *</Label>
+                <FormShootingTypeSelect
+                  id="shooting-type"
+                  name="shootingType"
+                  required
+                  placeholder="Shooting-Art wählen"
+                  options={underwaterOptions}
+                />
               </div>
             </div>
 
@@ -126,7 +134,13 @@ export function BookingSection() {
               />
             </div>
 
-            <Button type="submit" size="lg" className="w-full sm:w-auto">
+            {state?.error && (
+              <p className="text-sm text-red-600" role="alert">
+                {state.error}
+              </p>
+            )}
+
+            <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={pending}>
               <Send className="h-4 w-4" aria-hidden="true" />
               Termin anfragen
             </Button>

@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, UserCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { NotificationComposeDialog } from "@/components/admin/notification-compose-dialog";
+import { ShootingParticipantMenu } from "@/components/admin/shooting-participant-menu";
 import {
   confirmParticipantManual,
   resendParticipantConfirmation,
 } from "@/lib/actions/admin";
 import { getParticipantConfirmationVariables } from "@/lib/actions/email-templates";
+import type { ParticipantOrderSummary } from "@/lib/shooting-participant-orders";
+import { orderStatusLabels } from "@/lib/order-workflow";
 import {
   getWorkflowStats,
   normalizeParticipantStatus,
@@ -36,6 +37,7 @@ export type ParticipantRow = {
 type Props = {
   eventId: string;
   participants: ParticipantRow[];
+  ordersByParticipant?: Record<string, ParticipantOrderSummary[]>;
 };
 
 type ComposeState = {
@@ -55,8 +57,12 @@ function formatWhen(iso: string | null): string {
   });
 }
 
-export function ParticipantWorkflowTable({ eventId, participants }: Props) {
-  const [pending, startTransition] = useTransition();
+export function ParticipantWorkflowTable({
+  eventId,
+  participants,
+  ordersByParticipant = {},
+}: Props) {
+  const [, startTransition] = useTransition();
   const [compose, setCompose] = useState<ComposeState | null>(null);
   const [composeLoading, setComposeLoading] = useState(false);
   const stats = getWorkflowStats(participants);
@@ -82,7 +88,7 @@ export function ParticipantWorkflowTable({ eventId, participants }: Props) {
         <div>
           <h2 className="font-display text-xl font-semibold">Teilnehmer-Workflow</h2>
           <p className="text-sm text-slate-500">
-            Eingeladen → Akzeptiert → Fotos gesichtet → Bestellt
+            Eingeladen → Akzeptiert → Galerie geöffnet → Bestellt
           </p>
         </div>
         <dl className="flex flex-wrap gap-3 text-center text-xs">
@@ -99,7 +105,7 @@ export function ParticipantWorkflowTable({ eventId, participants }: Props) {
             <dd className="text-lg font-bold text-green-800">{stats.accepted}</dd>
           </div>
           <div className="rounded-xl bg-aqua-50 px-3 py-2">
-            <dt className="text-aqua-700">Gesichtet</dt>
+            <dt className="text-aqua-700">Galerie geöffnet</dt>
             <dd className="text-lg font-bold text-aqua-800">{stats.viewed}</dd>
           </div>
           <div className="rounded-xl bg-violet-50 px-3 py-2">
@@ -129,6 +135,7 @@ export function ParticipantWorkflowTable({ eventId, participants }: Props) {
             <tbody>
               {participants.map((p) => {
                 const displayStatus = normalizeParticipantStatus(p.status);
+                const orders = ordersByParticipant[p.id] ?? [];
                 return (
                   <tr key={p.id} className="border-b border-slate-50">
                     <td className="p-3 font-mono text-xs text-aqua-600">
@@ -160,36 +167,33 @@ export function ParticipantWorkflowTable({ eventId, participants }: Props) {
                     </td>
                     <td className="p-3 text-xs text-slate-500">
                       {formatWhen(p.orderedAt)}
+                      {orders[0] && (
+                        <p
+                          className="mt-0.5 font-mono text-[10px] text-violet-700"
+                          title={orderStatusLabels[orders[0].status]}
+                        >
+                          {orders[0].orderNumber}
+                        </p>
+                      )}
                     </td>
                     <td className="p-3">
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={pending || composeLoading}
-                          title="Bestätigung erneut senden"
-                          onClick={() => openResendCompose(p.id)}
-                        >
-                          <Mail className="h-3.5 w-3.5" aria-hidden />
-                        </Button>
-                        {p.status === "INVITED" && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={pending}
-                            title="Als akzeptiert markieren"
-                            onClick={() =>
-                              startTransition(async () => {
-                                await confirmParticipantManual(p.id, eventId);
-                              })
-                            }
-                          >
-                            <UserCheck className="h-3.5 w-3.5" aria-hidden />
-                          </Button>
-                        )}
-                      </div>
+                      <ShootingParticipantMenu
+                        participantId={p.id}
+                        participantLabel={p.childName}
+                        eventId={eventId}
+                        status={p.status}
+                        orders={orders}
+                        resendLoading={composeLoading}
+                        onResendConfirmation={() => openResendCompose(p.id)}
+                        onConfirmManual={
+                          p.status === "INVITED"
+                            ? () =>
+                                startTransition(async () => {
+                                  await confirmParticipantManual(p.id, eventId);
+                                })
+                            : undefined
+                        }
+                      />
                     </td>
                   </tr>
                 );

@@ -43,8 +43,12 @@ export default async function ShootingsPage({ searchParams }: Props) {
             Termine finden
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-600">
-            Alle Events auf einen Blick – oder nach Kategorie filtern.
-            Feste Termine mit Teilnehmerlimit, Restplätzen und Warteliste.
+            Alle Events auf einen Blick – Restplätze, Warteliste und Anmeldung online. Details zu
+            Ablauf & Bildpreisen:{" "}
+            <Link href="/info" className="text-aqua-700 underline underline-offset-2">
+              Info & FAQ
+            </Link>
+            .
           </p>
           <div className="mt-8">
             <Suspense fallback={<div className="h-10 animate-pulse rounded-full bg-aqua-100" />}>
