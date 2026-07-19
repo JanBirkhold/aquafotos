@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { HeroSection } from "@/components/sections/hero-section";
 import { OffersSection } from "@/components/sections/offers-section";
-import { GallerySection } from "@/components/sections/gallery-section";
-import { ReviewsSection } from "@/components/sections/reviews-section";
 import { TeamSection } from "@/components/sections/team-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PartnersShowcase } from "@/components/sections/partners-showcase";
+import { PartnerBecomeHomeSection } from "@/components/sections/partner-become-sections";
 import { JsonLd } from "@/components/json-ld";
-import { getFeaturedPartners } from "@/lib/actions/partner";
+import { featuredPartners } from "@/lib/featured-partners";
 import { getHomepageSchemas } from "@/lib/schema";
 
 const audiences = [
@@ -19,24 +18,22 @@ const audiences = [
   },
   {
     title: "Eltern mit Kindergartenkindern",
-    message: "Nur Ihre Familie sieht Ihre Bilder.",
+    message: "Die Kita-Jahre sind kurz – und die schönsten Momente bleiben für immer.",
     href: "/kita",
   },
   {
     title: "Schwimmbäder",
-    message: "Mehrwert für Ihre Teilnehmer ohne Aufwand.",
+    message: "Ein Erlebnis, das Familien begeistert – und Sie kaum etwas kostet.",
     href: "/partner",
   },
   {
     title: "Kitas",
-    message: "Moderne Kita-Fotografie ohne Mappenverkauf.",
+    message: "Fotos, die Eltern lieben – ohne Mappenchaos für Ihr Team.",
     href: "/partner",
   },
 ];
 
-export default async function HomePage() {
-  const partners = await getFeaturedPartners();
-
+export default function HomePage() {
   return (
     <>
       <JsonLd data={getHomepageSchemas()} />
@@ -66,13 +63,12 @@ export default async function HomePage() {
       </section>
 
       <OffersSection />
-      <GallerySection limit={6} />
-      <ReviewsSection />
       <PartnersShowcase
-        partners={partners}
+        partners={featuredPartners}
         title="Unsere Partner vor Ort"
-        subtitle="Schwimmbäder, Kitas und Familieneinrichtungen, mit denen wir zusammenarbeiten."
+        subtitle="Schwimmbäder, Kitas und Familieneinrichtungen in Barntrup, Bad Salzuflen und Lippe / OWL."
       />
+      <PartnerBecomeHomeSection />
       <TeamSection />
 
       <section className="section-padding bg-gradient-to-br from-aqua-600 to-aqua-800 text-center text-white">
@@ -80,8 +76,7 @@ export default async function HomePage() {
           Bereit für Ihr Shooting?
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-aqua-100">
-          Feste Events mit Restplätzen, Warteliste und persönlicher Galerie –
-          kein Kalender-Chaos.
+          Feste Events und persönliche Galerie – klar und unkompliziert.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Button asChild size="lg" variant="secondary">

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { OffersSection } from "@/components/sections/offers-section";
-import { BookingSection } from "@/components/sections/booking-section";
 import { JsonLd } from "@/components/json-ld";
 import { Button } from "@/components/ui/button";
 import { createPageMetadata } from "@/lib/seo";
@@ -9,9 +8,9 @@ import { getBreadcrumbSchema } from "@/lib/schema";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Angebote – Unterwasser Fotoshooting",
+  title: "Angebote – Unterwasser & Familie in Lippe / OWL",
   description:
-    "Unterwasser-Shootings, Familien- & Kinderfotos sowie Veranstaltungen und WeihnachtsMinis bei AquaFotos Barntrup. Jetzt Angebot anfragen.",
+    "Unterwasser-Shootings, Familien- & Kinderfotos sowie WeihnachtsMinis bei AquaFotos – Barntrup, Detmold, Lage, Bad Salzuflen.",
   path: "/angebote",
 });
 
@@ -30,16 +29,15 @@ export default function AngebotePage() {
             Angebote & Pakete
           </h1>
           <p className="mt-4 text-lg text-slate-600">
-            Professionelle Unterwasserfotografie für jeden Anlass – individuell
-            abgestimmt auf Ihre Wünsche in Barntrup und der Region Lippe / OWL.
+            Professionelle Unterwasserfotografie für jeden Anlass – in Barntrup und der Region
+            Lippe / OWL.
           </p>
           <Button asChild className="mt-6">
-            <Link href="/#termin">Termin buchen</Link>
+            <Link href="/shootings">Termin finden</Link>
           </Button>
         </div>
       </div>
       <OffersSection />
-      <BookingSection />
     </>
   );
 }

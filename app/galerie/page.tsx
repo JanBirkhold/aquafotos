@@ -6,9 +6,9 @@ import { getBreadcrumbSchema, getImageGallerySchema } from "@/lib/schema";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Galerie – Unterwasserfotos Barntrup",
+  title: "Galerie – Unterwasserfotos Barntrup, Detmold & Lippe",
   description:
-    "Entdecken Sie unsere Galerie: Unterwasserfotos für Kinder, Familien, Events und WeihnachtsMinis von AquaFotos in Barntrup und Lippe.",
+    "Galerie: Unterwasserfotos von AquaFotos aus Barntrup, Detmold, Lage und Bad Salzuflen – emotionale Momente unter Wasser.",
   path: "/galerie",
 });
 
@@ -25,7 +25,7 @@ export default function GaleriePage() {
         ]}
       />
       <div className="pt-28">
-        <GallerySection showAll />
+        <GallerySection showAll showFilters={false} />
       </div>
     </>
   );

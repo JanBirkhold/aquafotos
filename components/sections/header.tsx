@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, Gift, Menu, ShoppingCart, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -86,26 +86,6 @@ export function Header() {
             <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
               <Link href="/bilder-bestellen">Bilder bestellen</Link>
             </Button>
-            <Link
-              href="/gutschein"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-aqua-700 transition-colors hover:bg-aqua-50"
-              aria-label="Gutschein"
-            >
-              <Gift className="h-5 w-5" />
-            </Link>
-            <Link
-              href="/warenkorb"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-aqua-700 transition-colors hover:bg-aqua-50"
-              aria-label="Warenkorb"
-            >
-              <ShoppingCart className="h-5 w-5" />
-            </Link>
-            <Link
-              href="/login"
-              className="hidden rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-aqua-50 hover:text-aqua-700 sm:inline-block"
-            >
-              Login
-            </Link>
             <button
               type="button"
               className="inline-flex h-10 w-10 items-center justify-center rounded-full text-aqua-700 transition-colors hover:bg-aqua-50 lg:hidden"

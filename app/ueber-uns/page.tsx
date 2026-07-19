@@ -4,13 +4,17 @@ import { TeamSection } from "@/components/sections/team-section";
 import { JsonLd } from "@/components/json-ld";
 import { Button } from "@/components/ui/button";
 import { createPageMetadata } from "@/lib/seo";
-import { getBreadcrumbSchema, getTeamSchemas } from "@/lib/schema";
+import {
+  getBreadcrumbSchema,
+  getPersonSchema,
+  getTeamSchemas,
+} from "@/lib/schema";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Über uns – Team AquaFotos Barntrup",
+  title: "Über uns – Team AquaFotos Barntrup & Lippe",
   description:
-    "Lernen Sie Annika und Kasimir Eckhardt kennen – das Team hinter AquaFotos. Unterwasserfotografie mit Leidenschaft in Barntrup und Lippe.",
+    "Annika und Kasimir Eckhardt – AquaFotos. Unterwasserfotografie mit Leidenschaft in Barntrup, Detmold, Lage, Bad Salzuflen und OWL.",
   path: "/ueber-uns",
 });
 
@@ -23,6 +27,7 @@ export default function UeberUnsPage() {
             { name: "Start", url: siteConfig.url },
             { name: "Über uns", url: `${siteConfig.url}/ueber-uns` },
           ]),
+          getPersonSchema(),
           ...getTeamSchemas(),
         ]}
       />
@@ -33,11 +38,12 @@ export default function UeberUnsPage() {
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-slate-600">
             AquaFotos ist ein familiengeführtes Unternehmen aus Barntrup –
-            Annika inszeniert die Unterwasserbilder, Kasimir sorgt für Technik
-            und den reibungslosen Bestellprozess.
+            für Familien und Partner in Detmold, Lage, Bad Salzuflen und ganz
+            Lippe / OWL. Annika inszeniert die Unterwasserbilder, Kasimir sorgt
+            für Technik und den reibungslosen Ablauf.
           </p>
           <Button asChild className="mt-6">
-            <Link href="/#termin">Termin buchen</Link>
+            <Link href="/shootings">Termin finden</Link>
           </Button>
         </div>
       </div>

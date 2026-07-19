@@ -1,52 +1,53 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { VoucherPageHero } from "@/components/voucher/voucher-page-hero";
-import { VoucherProductGrid } from "@/components/voucher/voucher-product-grid";
-import { getActiveVoucherProducts, getVoucherCartCount } from "@/lib/voucher-queries";
-import { shootingTypeLabels } from "@/lib/shooting-types";
 import { createPageMetadata } from "@/lib/seo";
+import { siteConfig } from "@/lib/site-config";
+import { Button } from "@/components/ui/button";
+import { ObfuscatedEmailLink } from "@/components/obfuscated-email";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Gutschein kaufen – AquaFotos",
+  title: "Gutschein kaufen – Unterwasserfotos Lippe / OWL",
   description:
-    "Verschenken Sie Unterwasser- und Familienfotoshootings. Gutschein online bestellen – Zahlung per Überweisung.",
+    "Gutschein für AquaFotos-Unterwasserfotos: Anfrage per E-Mail oder Telefon – für Familien in Barntrup, Detmold, Lage und Bad Salzuflen.",
   path: "/gutschein",
 });
 
-export default async function GutscheinPage() {
-  const [products, cartCount] = await Promise.all([
-    getActiveVoucherProducts(),
-    getVoucherCartCount(),
-  ]);
-
-  const productViews = products.map((p) => ({
-    id: p.id,
-    title: p.title,
-    description: p.description,
-    imageUrl: p.imageUrl,
-    priceCents: p.priceCents,
-    shootingTypeLabel: p.shootingType ? shootingTypeLabels[p.shootingType] : null,
-  }));
-
+export default function GutscheinPage() {
   return (
-    <>
-      <VoucherPageHero />
-
-      <div id="gutscheine" className="section-padding scroll-mt-28 bg-sand-50">
-        <div className="mx-auto max-w-7xl">
-          {productViews.length === 0 ? (
-            <p className="text-center text-slate-500">
-              Aktuell keine Gutscheine verfügbar.{" "}
-              <Link href="/kontakt" className="text-aqua-600 hover:underline">
-                Kontaktieren Sie uns
-              </Link>
-              .
-            </p>
-          ) : (
-            <VoucherProductGrid products={productViews} cartCount={cartCount} />
-          )}
+    <div className="pt-28">
+      <section className="section-padding bg-gradient-to-b from-aqua-50/60 to-sand-50">
+        <div className="mx-auto max-w-2xl text-center">
+          <h1 className="font-display text-4xl font-bold text-aqua-900 sm:text-5xl">
+            Herzlich Willkommen bei Aquafotos!
+          </h1>
+          <h2 className="mt-6 font-display text-2xl font-semibold text-aqua-800">
+            Gutschein kaufen
+          </h2>
+          <p className="mt-4 text-slate-600">
+            Die Zahlung erfolgt per Vorkasse (Überweisung). Sobald der Zahlungseingang
+            festgestellt wurde, erhalten Sie den Gutscheincode per E-Mail. Der Code kann bei
+            der nächsten Bestellung eingelöst werden, sodass sich der zu zahlende Betrag um den
+            Gutscheinwert reduziert.
+          </p>
+          <p className="mt-6 text-slate-600">
+            Schreiben Sie uns Ihren gewünschten Betrag sowie Vorname, Nachname und E-Mail –
+            wir senden Ihnen die Überweisungsdaten zu.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg">
+              <ObfuscatedEmailLink>Gutschein per E-Mail anfragen</ObfuscatedEmailLink>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <a href={`tel:${siteConfig.phone.replace(/\s/g, "")}`}>
+                {siteConfig.phoneDisplay}
+              </a>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/kontakt">Kontakt</Link>
+            </Button>
+          </div>
         </div>
-      </div>
-    </>
+      </section>
+    </div>
   );
 }

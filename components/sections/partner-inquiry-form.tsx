@@ -1,119 +1,56 @@
 "use client";
 
-import { useActionState } from "react";
-import { Loader2, Building2, MapPin, Mail } from "lucide-react";
-import {
-  submitPartnerInquiry,
-  type PartnerInquiryState,
-} from "@/lib/actions/partner";
-import { EmailSubmitSuccess } from "@/components/ui/email-submit-success";
+import { Building2, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { siteConfig } from "@/lib/site-config";
 
 export function PartnerInquiryForm() {
-  const [state, formAction, pending] = useActionState<PartnerInquiryState, FormData>(
-    submitPartnerInquiry,
-    null,
-  );
-
-  if (state?.success) {
-    return (
-      <EmailSubmitSuccess
-        title={state.emailSent ? "Anfrage gesendet" : "Anfrage gespeichert"}
-        message="Vielen Dank! Wir melden uns per E-Mail mit einem Terminvorschlag."
-        emailSent={state.emailSent}
-        emailNotice={state.emailNotice}
-      />
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const company = String(fd.get("company") ?? "").trim();
+    const location = String(fd.get("location") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const subject = encodeURIComponent(`Partner-Anfrage: ${company}`);
+    const body = encodeURIComponent(
+      `Unternehmen: ${company}\nOrt: ${location}\nE-Mail: ${email}\n\nNachricht:\n`,
     );
+    window.location.href = `mailto:${siteConfig.emailUser}@${siteConfig.emailDomain}?subject=${subject}&body=${body}`;
   }
 
   return (
     <form
-      action={formAction}
+      onSubmit={handleSubmit}
       className="rounded-2xl border border-aqua-100 bg-white p-6 shadow-sm sm:p-8"
     >
-      {state?.error && (
-        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-          {state.error}
-        </p>
-      )}
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="company">Unternehmen / Einrichtung *</Label>
-          <div className="relative">
-            <Building2
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              aria-hidden
-            />
-            <Input
-              id="company"
-              name="company"
-              required
-              autoComplete="organization"
-              placeholder="z. B. Vitasol Therme"
-              className="pl-10"
-            />
-          </div>
-        </div>
-
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="location">Ort *</Label>
-          <div className="relative">
-            <MapPin
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              aria-hidden
-            />
-            <Input
-              id="location"
-              name="location"
-              required
-              autoComplete="address-level2"
-              placeholder="z. B. Bad Salzuflen"
-              className="pl-10"
-            />
-          </div>
+          <Label htmlFor="company">
+            <Building2 className="mr-1 inline h-4 w-4" aria-hidden />
+            Unternehmen*
+          </Label>
+          <Input id="company" name="company" required />
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="email">Ihre E-Mail *</Label>
-          <div className="relative">
-            <Mail
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              aria-hidden
-            />
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="kontakt@beispiel.de"
-              className="pl-10"
-            />
-          </div>
+          <Label htmlFor="location">
+            <MapPin className="mr-1 inline h-4 w-4" aria-hidden />
+            Ort*
+          </Label>
+          <Input id="location" name="location" required />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">
+            <Mail className="mr-1 inline h-4 w-4" aria-hidden />
+            E-Mail*
+          </Label>
+          <Input id="email" name="email" type="email" required autoComplete="email" />
+        </div>
+        <Button type="submit" className="w-full">
+          Anfrage per E-Mail öffnen
+        </Button>
       </div>
-
-      <label className="mt-5 flex items-start gap-2 text-sm text-slate-600">
-        <input type="checkbox" name="gdprConsent" required className="mt-1" />
-        <span>
-          Ich willige ein, dass AquaFotos meine Angaben zur Bearbeitung der Partner-Anfrage
-          per E-Mail nutzt. *
-        </span>
-      </label>
-
-      <Button type="submit" className="mt-6 w-full sm:w-auto" disabled={pending}>
-        {pending ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Wird gesendet…
-          </>
-        ) : (
-          "Termin per E-Mail anfragen"
-        )}
-      </Button>
     </form>
   );
 }

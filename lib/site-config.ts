@@ -2,8 +2,8 @@ export const siteConfig = {
   name: "AquaFotos",
   url: "https://aquafotos.com",
   locale: "de-DE",
-  phone: "+49 157 514 788 26",
-  phoneDisplay: "0157 514 788 26",
+  phone: "+49 176 34934106",
+  phoneDisplay: "0176 34934106",
   emailUser: "annika",
   emailDomain: "aquafotos.com",
   address: {
@@ -23,21 +23,36 @@ export const siteConfig = {
   },
   tagline: "Erinnerungen, die bleiben.",
   subline:
-    "Professionelle Unterwasser-, Kinder- und Familienfotografie in Ostwestfalen.",
+    "Professionelle Unterwasser-, Kinder- und Familienfotografie in Barntrup, Detmold, Lage, Bad Salzuflen und ganz Ostwestfalen.",
   geo: {
-    area: "Barntrup, Lippe, Ostwestfalen-Lippe (OWL)",
+    area:
+      "Barntrup, Detmold, Lage, Bad Salzuflen, Kreis Lippe, Ostwestfalen-Lippe (OWL)",
+    cities: [
+      "Barntrup",
+      "Detmold",
+      "Lage",
+      "Bad Salzuflen",
+      "Lemgo",
+      "Horn-Bad Meinberg",
+    ] as const,
     keywords: [
       "Unterwasserfotografie Barntrup",
-      "Kinderfotograf Lippe",
+      "Unterwasserfotos Detmold",
+      "Kinderfotograf Detmold",
+      "Familienfotograf Lage",
+      "Unterwasser Shooting Bad Salzuflen",
+      "Babyfotograf Lippe",
       "Kita Fotograf OWL",
-      "Babyfotograf Barntrup",
-      "Familienfotograf Lippe",
-      "Unterwasser Fotoshooting",
-      "AquaFotos",
+      "Fotoshooting Detmold",
+      "Fotoshooting Lage",
+      "Fotoshooting Bad Salzuflen",
       "WeihnachtsMinis Barntrup",
-      "professionelle Unterwasserbilder",
-      "Fotoshooting OWL",
+      "AquaFotos",
+      "Unterwasserfotografie Lippe",
+      "Professionelle Unterwasserbilder OWL",
     ],
+    /** Social / Profil-URLs für Schema sameAs – leer lassen, wenn noch keine Profile */
+    sameAs: [] as string[],
   },
   shootingNav: [
     { label: "Unterwasser", href: "/unterwasser" },
@@ -49,8 +64,8 @@ export const siteConfig = {
   nav: [
     { label: "Start", href: "/" },
     { label: "Info & FAQ", href: "/info" },
-    { label: "Gutschein", href: "/gutschein" },
     { label: "Partner", href: "/partner" },
+    { label: "Gutschein", href: "/gutschein" },
     { label: "Kontakt", href: "/kontakt" },
   ],
   /** Leer lassen, wenn kein Kleinunternehmer-Hinweis auf Rechnungen nötig ist. */
@@ -72,31 +87,3 @@ export const galleryCategoryLabels: Record<GalleryCategory, string> = {
   events: "Events",
   weihnachtsminis: "WeihnachtsMinis",
 };
-
-export const heroSlides = [
-  {
-    src: "/images/hero/unterwasser.webp",
-    alt: "Unterwasser Baby – AquaFotos",
-    label: "Unterwasser",
-  },
-  {
-    src: "/images/hero/kinder.webp",
-    alt: "Kinderportrait – AquaFotos",
-    label: "Kinder",
-  },
-  {
-    src: "/images/hero/familie.webp",
-    alt: "Familienbild – AquaFotos",
-    label: "Familie",
-  },
-  {
-    src: "/images/hero/weihnachtsminis.webp",
-    alt: "WeihnachtsMini – AquaFotos",
-    label: "WeihnachtsMinis",
-  },
-  {
-    src: "/images/hero/paar.webp",
-    alt: "Paarshooting – AquaFotos",
-    label: "Paar",
-  },
-] as const;

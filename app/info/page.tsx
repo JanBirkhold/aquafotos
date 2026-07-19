@@ -1,41 +1,19 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/json-ld";
-import { InfoCategoryScroller } from "@/components/sections/info-category-scroller";
 import { ShootingInfoPageContent } from "@/components/sections/shooting-info-page-content";
 import { createPageMetadata } from "@/lib/seo";
 import { getBreadcrumbSchema } from "@/lib/schema";
 import { siteConfig } from "@/lib/site-config";
-import {
-  getFaqSchemaFromItems,
-  type ShootingInfoSlug,
-} from "@/lib/shooting-info-content";
+import { getFaqSchemaFromItems } from "@/lib/shooting-info-content";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Info & FAQ – Ablauf, Preise & Anmeldung",
+  title: "Info & FAQ – Unterwasser-Shooting Barntrup, Detmold & Lippe",
   description:
-    "So funktioniert's bei AquaFotos: Ablauf für Unterwasser-, Kita-, Baby-, Familien- und Aktions-Shootings. Termine, Bildpreise und häufige Fragen.",
+    "Ablauf, Anmeldung und Preise für Unterwasser-Shootings von AquaFotos in Barntrup, Detmold, Lage, Bad Salzuflen und OWL.",
   path: "/info",
 });
 
-const VALID_CATEGORIES = new Set<ShootingInfoSlug>([
-  "unterwasser",
-  "kita",
-  "baby",
-  "familie",
-  "aktionen",
-]);
-
-type Props = {
-  searchParams: Promise<{ kategorie?: string }>;
-};
-
-export default async function InfoPage({ searchParams }: Props) {
-  const { kategorie } = await searchParams;
-  const activeCategory =
-    kategorie && VALID_CATEGORIES.has(kategorie as ShootingInfoSlug)
-      ? (kategorie as ShootingInfoSlug)
-      : undefined;
-
+export default function InfoPage() {
   return (
     <>
       <JsonLd
@@ -51,16 +29,15 @@ export default async function InfoPage({ searchParams }: Props) {
         <section className="section-padding bg-gradient-to-b from-aqua-50/60 to-sand-50 pb-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="font-display text-4xl font-bold text-aqua-900 sm:text-5xl">
-              Info & FAQ
+              Info &amp; FAQ
             </h1>
             <p className="mt-4 text-lg text-slate-600">
-              Ablauf, Anmeldung und Preise für alle Shooting-Arten – Unterwasser, Kita, Baby,
-              Familie und saisonale Aktionen.
+              Ablauf, Anmeldung und Preise für Unterwasser-Veranstaltungen in
+              Barntrup, Detmold, Lage, Bad Salzuflen und ganz Lippe / OWL.
             </p>
           </div>
         </section>
-        <InfoCategoryScroller category={activeCategory} />
-        <ShootingInfoPageContent activeCategory={activeCategory} />
+        <ShootingInfoPageContent />
       </div>
     </>
   );

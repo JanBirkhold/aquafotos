@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import { siteConfig } from "./site-config";
 
-const defaultTitle = "AquaFotos Barntrup | Unterwasserfotos & Fotoshootings";
+const defaultTitle = "AquaFotos Barntrup | Unterwasserfotos Detmold, Lage & Bad Salzuflen";
 const defaultDescription =
-  "Professionelle Unterwasserfotografie in Barntrup: emotionale Shootings für Kinder, Familien und Events. Jetzt Termin bei AquaFotos anfragen.";
+  "Professionelle Unterwasserfotografie in Barntrup, Detmold, Lage und Bad Salzuflen: emotionale Shootings für Kinder, Familien und Events in Lippe / OWL. Jetzt Termin anfragen.";
+
+const defaultOgImage = {
+  url: "/images/hero-bg.webp",
+  width: 3840,
+  height: 2560,
+  alt: "Unterwasserfotografie AquaFotos – Barntrup, Detmold, Lage, Bad Salzuflen",
+};
 
 export const baseMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -26,20 +33,13 @@ export const baseMetadata: Metadata = {
     siteName: siteConfig.name,
     title: defaultTitle,
     description: defaultDescription,
-    images: [
-      {
-        url: "/images/hero-bg.webp",
-        width: 3840,
-        height: 2560,
-        alt: "Professionelle Unterwasserfotografie bei AquaFotos Barntrup",
-      },
-    ],
+    images: [defaultOgImage],
   },
   twitter: {
     card: "summary_large_image",
     title: defaultTitle,
     description: defaultDescription,
-    images: ["/images/hero-bg.webp"],
+    images: [defaultOgImage.url],
   },
   robots: {
     index: true,
@@ -58,25 +58,41 @@ export function createPageMetadata({
   title,
   description,
   path,
+  noIndex = false,
+  image = defaultOgImage.url,
 }: {
   title: string;
   description: string;
   path: string;
+  noIndex?: boolean;
+  image?: string;
 }): Metadata {
+  const url = `${siteConfig.url}${path}`;
   return {
     title,
     description,
     alternates: {
-      canonical: `${siteConfig.url}${path}`,
+      canonical: url,
     },
     openGraph: {
       title,
       description,
-      url: `${siteConfig.url}${path}`,
+      url,
+      images: [{ url: image, alt: title }],
     },
     twitter: {
       title,
       description,
+      images: [image],
     },
+    ...(noIndex
+      ? {
+          robots: {
+            index: false,
+            follow: false,
+            googleBot: { index: false, follow: false },
+          },
+        }
+      : {}),
   };
 }

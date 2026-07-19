@@ -80,16 +80,12 @@ export function Footer() {
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-slate-200 sm:text-[0.9375rem]">
               AquaFotos ist Ihr Spezialist für professionelle Unterwasserfotografie
-              in Barntrup, Kreis Lippe und Ostwestfalen-Lippe (OWL). Ob
-              Unterwasserfotos für Kinder, Familien-Shootings, Veranstaltungen oder
-              WeihnachtsMinis – wir schaffen emotionale Bilder, die bleibende
-              Erinnerungen werden.{" "}
-              <Link href="/#termin" className={`${footerLinkClass} font-medium underline underline-offset-2`}>
-                Jetzt Termin buchen
-              </Link>{" "}
-              oder{" "}
-              <Link href="/galerie" className={`${footerLinkClass} font-medium underline underline-offset-2`}>
-                Bilder in unserer Galerie entdecken
+              in Barntrup, Detmold, Lage, Bad Salzuflen, Kreis Lippe und
+              Ostwestfalen-Lippe (OWL). Ob Unterwasserfotos für Kinder,
+              Familien-Shootings, Veranstaltungen oder WeihnachtsMinis – wir
+              schaffen emotionale Bilder, die bleibende Erinnerungen werden.{" "}
+              <Link href="/shootings" className={`${footerLinkClass} font-medium underline underline-offset-2`}>
+                Jetzt Termin finden
               </Link>
               .
             </p>
@@ -98,15 +94,12 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-sm text-slate-300 sm:flex-row">
           <p>© {currentYear} {siteConfig.name}. Alle Rechte vorbehalten.</p>
-          <p>
-            Verantwortlich: {siteConfig.owner.name} ·{" "}
-            <Link
-              href="/impressum"
-              className={`${footerLinkClass} underline underline-offset-2`}
-            >
-              Impressum
-            </Link>
-          </p>
+          <Link
+            href="/impressum"
+            className={`${footerLinkClass} underline underline-offset-2`}
+          >
+            Impressum
+          </Link>
         </div>
       </div>
     </footer>

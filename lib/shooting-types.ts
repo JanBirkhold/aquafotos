@@ -1,4 +1,38 @@
-import type { ShootingCategory, ShootingType } from "@prisma/client";
+export type ShootingCategory =
+  | "UNDERWATER"
+  | "KITA"
+  | "BABY"
+  | "FAMILY"
+  | "COUPLE"
+  | "SEASONAL"
+  | "OTHER";
+
+export type ShootingType =
+  | "UNDERWATER_BABY"
+  | "UNDERWATER_TODDLER"
+  | "UNDERWATER_CHILD"
+  | "UNDERWATER_FAMILY"
+  | "UNDERWATER_SIBLINGS"
+  | "KITA_HOLIDAY"
+  | "KITA_SIBLINGS"
+  | "KITA_GROUP"
+  | "KITA_PORTRAIT"
+  | "BABY_BELLY"
+  | "BABY_NEWBORN"
+  | "BABY_MILESTONE"
+  | "BABY_6_MONTHS"
+  | "BABY_1_YEAR"
+  | "FAMILY_OUTDOOR"
+  | "FAMILY_PARK"
+  | "FAMILY_FOREST"
+  | "FAMILY_EVENING"
+  | "COUPLE"
+  | "CHRISTMAS_MINIS"
+  | "MOTHERS_DAY"
+  | "FATHERS_DAY"
+  | "SCHOOL_ENROLLMENT"
+  | "EASTER"
+  | "OTHER";
 
 export const shootingTypeLabels: Record<ShootingType, string> = {
   UNDERWATER_BABY: "Unterwasser Babyschwimmen",
@@ -100,9 +134,9 @@ export const servicePages: ServicePage[] = [
     title: "Unterwasserfotografie",
     headline: "Magische Momente unter Wasser",
     subline:
-      "Emotionale Unterwasserbilder für Babys, Kinder, Familien und Geschwister – Termine online buchbar.",
+      "Emotionale Unterwasserbilder für Babys, Kinder und Familien aus Barntrup, Detmold, Lage und Bad Salzuflen – Termine in Lippe / OWL.",
     category: "UNDERWATER",
-    audience: "Eltern mit Babys & Kindern",
+    audience: "Eltern mit Babys & Kindern · Lippe / OWL",
     message: "Die schönsten Erinnerungen entstehen nur einmal.",
     problems: [
       "Keine schönen Fotos unter Wasser",
@@ -110,50 +144,50 @@ export const servicePages: ServicePage[] = [
       "Keine Erfahrung mit Unterwasserfotografie",
     ],
     image: "/images/hero/unterwasser.webp",
-    imageAlt: "Unterwasserfoto Kind – AquaFotos Barntrup",
+    imageAlt: "Unterwasserfoto Kind – AquaFotos Barntrup, Detmold & Bad Salzuflen",
   },
   {
     slug: "kita",
     title: "Kita-Fotografie",
     headline: "Moderne Kita-Fotografie ohne Mappenchaos",
     subline:
-      "Ferienaktionen, Gruppenfotos, Geschwistershootings und Einzelportraits – DSGVO-konform online bestellbar.",
+      "Ferienaktionen, Gruppenfotos und Portraits für Kitas in Detmold, Lage, Barntrup und Bad Salzuflen.",
     category: "KITA",
-    audience: "Kitas & Eltern",
+    audience: "Kitas & Eltern · Kreis Lippe",
     message: "Moderne Kita-Fotografie ohne Mappenverkauf.",
     problems: [
       "Fotografenchaos und unübersichtliche Bestellung",
-      "Datenschutz-Bedenken",
+      "Zu viel Organisation für Kita und Eltern",
       "Komplizierte Bestellprozesse für Eltern",
     ],
     image: "/images/hero/kinder.webp",
-    imageAlt: "Kita-Fotografie – AquaFotos OWL",
+    imageAlt: "Kita-Fotografie – AquaFotos Detmold, Lage & OWL",
   },
   {
     slug: "baby",
     title: "Babyfotografie",
     headline: "Die ersten Momente für immer festhalten",
     subline:
-      "Babybauch, Newborn, Meilensteine, 6 Monate und 1 Jahr – liebevoll inszeniert.",
+      "Babybauch, Newborn und Meilensteine – liebevoll inszeniert für Familien aus Barntrup, Detmold und Umgebung.",
     category: "BABY",
-    audience: "Eltern mit Babys",
+    audience: "Eltern mit Babys · Lippe",
     message: "Die schönsten Erinnerungen entstehen nur einmal.",
     problems: [
-      "Keine professionellen Erinnerungsfotos",
-      "Wertvolle Momente vergehen zu schnell",
-      "Unsicherheit bei der Bildauswahl",
+      "Handyfotos halten diese besonderen Momente oft nicht fest",
+      "Die ersten Monate sind schneller vorbei, als man denkt",
+      "Schwer zu sagen, welche Bilder man später wirklich behalten will",
     ],
     image: "/images/hero/baby.webp",
-    imageAlt: "Babyfotografie – AquaFotos Barntrup",
+    imageAlt: "Babyfotografie – AquaFotos Barntrup & Detmold",
   },
   {
     slug: "familie",
     title: "Familienfotografie",
     headline: "Echte Emotionen im Freien",
     subline:
-      "Outdoor, Park, Wald und Abendshootings – natürliche Familienportraits in Lippe / OWL.",
+      "Outdoor-, Park- und Waldshootings – natürliche Familienportraits in Detmold, Lage, Bad Salzuflen und ganz Lippe / OWL.",
     category: "FAMILY",
-    audience: "Familien",
+    audience: "Familien · Ostwestfalen",
     message: "Erinnerungen, die bleiben.",
     problems: [
       "Gestellte Fotos statt echter Momente",
@@ -161,16 +195,16 @@ export const servicePages: ServicePage[] = [
       "Kein Fotograf, der Geduld mitbringt",
     ],
     image: "/images/hero/familie.webp",
-    imageAlt: "Familienfotografie Outdoor – AquaFotos",
+    imageAlt: "Familienfotografie Outdoor – AquaFotos Lippe / OWL",
   },
   {
     slug: "aktionen",
     title: "Saisonale Aktionen",
     headline: "Besondere Anlässe, besondere Bilder",
     subline:
-      "WeihnachtsMinis, Muttertag, Vatertag, Einschulung und Oster Specials.",
+      "WeihnachtsMinis und saisonale Specials in Barntrup und Umgebung – ideal für Familien aus Detmold, Lage und Bad Salzuflen.",
     category: "SEASONAL",
-    audience: "Familien",
+    audience: "Familien · Lippe / OWL",
     message: "Limitierte Termine – jetzt Platz sichern.",
     problems: [
       "Beliebte Termine schnell ausgebucht",
@@ -178,7 +212,7 @@ export const servicePages: ServicePage[] = [
       "Schwer passende Angebote zu finden",
     ],
     image: "/images/hero/weihnachtsminis.webp",
-    imageAlt: "WeihnachtsMinis – AquaFotos Barntrup",
+    imageAlt: "WeihnachtsMinis – AquaFotos Barntrup & Lippe",
   },
 ];
 
@@ -193,7 +227,7 @@ export const partnerTypes = [
     type: "KITA" as const,
     title: "Kitas",
     message: "Moderne Kita-Fotografie ohne Mappenverkauf.",
-    problem: "Fotografenchaos & DSGVO",
+    problem: "Fotografenchaos & Mappenverkauf",
   },
   {
     type: "MIDWIFE" as const,

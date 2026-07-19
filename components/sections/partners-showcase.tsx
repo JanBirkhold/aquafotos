@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { partnerTypeLabels } from "@/lib/partners";
-import type { PartnerPublic } from "@/lib/partners";
+import { partnerTypeLabels, type PartnerPublic } from "@/lib/featured-partners";
 
 type Props = {
   partners: PartnerPublic[];
@@ -30,39 +29,33 @@ export function PartnersShowcase({
             <li key={p.id}>
               <Card className="h-full border-aqua-100">
                 <CardContent className="flex h-full flex-col p-6">
-                  <div className="flex h-20 items-center justify-center rounded-xl bg-slate-50 px-4">
-                    {p.logoUrl ? (
+                  {p.logoUrl ? (
+                    <div className="flex h-20 items-center justify-center rounded-xl bg-slate-50 px-4">
                       <div className="relative h-14 w-full max-w-[200px]">
                         <Image
                           src={p.logoUrl}
                           alt={`${p.name} Logo`}
                           fill
                           className="object-contain"
-                          unoptimized={p.logoUrl.endsWith(".svg")}
+                          sizes="200px"
                         />
                       </div>
-                    ) : (
-                      <span className="font-display text-lg font-semibold text-aqua-800">
-                        {p.name}
-                      </span>
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
                   <p className="mt-4 text-xs font-medium uppercase tracking-wide text-aqua-600">
                     {partnerTypeLabels[p.type]}
                     {p.city ? ` · ${p.city}` : ""}
                   </p>
                   <h3 className="mt-1 font-semibold text-aqua-900">{p.name}</h3>
                   {p.description && (
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
-                      {p.description}
-                    </p>
+                    <p className="mt-2 flex-1 text-sm text-slate-600">{p.description}</p>
                   )}
                   {p.websiteUrl && (
                     <Link
                       href={p.websiteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-aqua-700 hover:text-aqua-900"
+                      className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-aqua-700 hover:underline"
                     >
                       Website
                       <ExternalLink className="h-3.5 w-3.5" aria-hidden />

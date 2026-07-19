@@ -12,8 +12,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/shootings",
     "/info",
     "/bilder-bestellen",
+    "/gutschein",
     "/partner",
     "/kontakt",
+    "/angebote",
     "/galerie",
     "/ueber-uns",
     "/impressum",
@@ -24,6 +26,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${siteConfig.url}${route}`,
     lastModified: new Date(),
     changeFrequency: route === "" || route === "/shootings" ? "weekly" : "monthly",
-    priority: route === "" ? 1 : route.startsWith("/shoot") ? 0.95 : 0.8,
+    priority:
+      route === ""
+        ? 1
+        : route === "/shootings" || route === "/partner" || route === "/info"
+          ? 0.95
+          : 0.8,
   }));
 }

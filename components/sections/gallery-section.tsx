@@ -21,8 +21,6 @@ const categories: Array<GalleryCategory | "all"> = [
   "unterwasser",
   "kinder",
   "familien",
-  "events",
-  "weihnachtsminis",
 ];
 
 function aspectClass(aspect: GalleryItem["aspect"]) {
@@ -39,14 +37,19 @@ function aspectClass(aspect: GalleryItem["aspect"]) {
 type GallerySectionProps = {
   showAll?: boolean;
   limit?: number;
+  showFilters?: boolean;
 };
 
-export function GallerySection({ showAll = false, limit = 8 }: GallerySectionProps) {
+export function GallerySection({
+  showAll = false,
+  limit = 8,
+  showFilters = true,
+}: GallerySectionProps) {
   const [activeCategory, setActiveCategory] = useState<GalleryCategory | "all">("all");
   const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null);
 
   const filtered =
-    activeCategory === "all"
+    !showFilters || activeCategory === "all"
       ? galleryItems
       : galleryItems.filter((item) => item.category === activeCategory);
 
@@ -69,39 +72,36 @@ export function GallerySection({ showAll = false, limit = 8 }: GallerySectionPro
             Galerie
           </h2>
           <p className="mt-4 text-lg text-slate-600">
-            Einblicke in unsere Unterwasserfotografie – Kinder, Familien, Events
-            und WeihnachtsMinis aus Barntrup und der Region Lippe.
-          </p>
-          <p className="mt-3 text-sm text-slate-500">
-            Vorschaubilder können geschützt bzw. mit Wasserzeichen dargestellt
-            werden. Nach dem Kauf erhalten Sie hochauflösende Dateien ohne
-            Wasserzeichen.
+            Einblicke in unsere Unterwasserfotografie – emotionale Momente aus
+            Barntrup und der Region Lippe.
           </p>
         </div>
 
-        <div
-          className="mt-8 flex flex-wrap justify-center gap-2"
-          role="tablist"
-          aria-label="Galerie-Kategorien"
-        >
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              role="tab"
-              aria-selected={activeCategory === cat}
-              onClick={() => setActiveCategory(cat)}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                activeCategory === cat
-                  ? "bg-aqua-600 text-white shadow-md shadow-aqua-600/25"
-                  : "glass text-slate-600 hover:bg-white/80",
-              )}
-            >
-              {cat === "all" ? "Alle" : galleryCategoryLabels[cat]}
-            </button>
-          ))}
-        </div>
+        {showFilters && (
+          <div
+            className="mt-8 flex flex-wrap justify-center gap-2"
+            role="tablist"
+            aria-label="Galerie-Kategorien"
+          >
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                role="tab"
+                aria-selected={activeCategory === cat}
+                onClick={() => setActiveCategory(cat)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  activeCategory === cat
+                    ? "bg-aqua-600 text-white shadow-md shadow-aqua-600/25"
+                    : "glass text-slate-600 hover:bg-white/80",
+                )}
+              >
+                {cat === "all" ? "Alle" : galleryCategoryLabels[cat]}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="mt-10 grid auto-rows-[180px] grid-cols-2 gap-3 sm:auto-rows-[220px] md:grid-cols-4 lg:gap-4">
           {displayed.map((item) => (

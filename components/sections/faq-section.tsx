@@ -17,7 +17,7 @@ type Props = {
 
 export function FaqSection({
   title = "Häufige Fragen",
-  description = "Antworten zu Anmeldung, Ablauf, Preisen und Bestellung – mit direkten Links zu den passenden Seiten.",
+  description = "Antworten zu Anmeldung, Ablauf, Preisen und Bestellung.",
   items,
   grouped = false,
   className,

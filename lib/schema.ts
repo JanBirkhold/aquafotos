@@ -1,7 +1,8 @@
 import { siteConfig } from "./site-config";
 import { galleryItems } from "./gallery-data";
 import { teamMembers } from "./team-data";
-import { getFaqSchemaFromItems } from "@/lib/shooting-info-content";
+
+const areaCities = siteConfig.geo.cities;
 
 export function getOrganizationSchema() {
   return {
@@ -11,8 +12,7 @@ export function getOrganizationSchema() {
     name: siteConfig.name,
     url: siteConfig.url,
     logo: `${siteConfig.url}/images/aquafotos_logo.svg`,
-    description:
-      "Professionelle Unterwasserfotografie in Barntrup und Umgebung Lippe / OWL für Kinder, Familien und besondere Anlässe.",
+    description: `Professionelle Unterwasserfotografie in ${siteConfig.geo.area} für Kinder, Familien und besondere Anlässe.`,
     contactPoint: {
       "@type": "ContactPoint",
       telephone: siteConfig.phone,
@@ -20,7 +20,7 @@ export function getOrganizationSchema() {
       areaServed: "DE",
       availableLanguage: "German",
     },
-    sameAs: [],
+    sameAs: [...siteConfig.geo.sameAs],
   };
 }
 
@@ -48,12 +48,11 @@ export function getLocalBusinessSchema() {
       longitude: 9.116,
     },
     areaServed: [
-      { "@type": "City", name: "Barntrup" },
+      ...areaCities.map((name) => ({ "@type": "City" as const, name })),
       { "@type": "AdministrativeArea", name: "Kreis Lippe" },
       { "@type": "AdministrativeArea", name: "Ostwestfalen-Lippe" },
     ],
-    description:
-      "Unterwasserfotografie und Fotoshootings in Barntrup – emotionale Bilder für Kinder, Familien, Veranstaltungen und WeihnachtsMinis.",
+    description: `Unterwasserfotografie und Fotoshootings in Barntrup, Detmold, Lage und Bad Salzuflen – emotionale Bilder für Kinder, Familien, Veranstaltungen und WeihnachtsMinis in Lippe / OWL.`,
     parentOrganization: { "@id": `${siteConfig.url}/#organization` },
   };
 }
@@ -74,7 +73,16 @@ export function getPersonSchema() {
       "Kinderfotografie",
       "Familienfotografie",
       "Eventfotografie",
+      "Fotografie Barntrup",
+      "Fotografie Detmold",
+      "Fotografie Bad Salzuflen",
     ],
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: siteConfig.address.city,
+      addressRegion: siteConfig.address.region,
+      addressCountry: siteConfig.address.country,
+    },
   };
 }
 
@@ -108,9 +116,9 @@ export function getImageGallerySchema() {
   return {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
-    name: "AquaFotos Galerie – Unterwasserfotografie Barntrup",
+    name: "AquaFotos Galerie – Unterwasserfotografie Barntrup & Lippe",
     description:
-      "Ausgewählte Unterwasserbilder von AquaFotos: Kinder, Familien, Events und WeihnachtsMinis.",
+      "Ausgewählte Unterwasserbilder von AquaFotos aus Barntrup, Detmold, Lage und Bad Salzuflen: Kinder, Familien, Events und WeihnachtsMinis.",
     image: galleryItems.slice(0, 8).map((item) => ({
       "@type": "ImageObject",
       contentUrl: `${siteConfig.url}${item.src}`,
@@ -125,9 +133,8 @@ export function getHomepageSchemas() {
   return [
     getOrganizationSchema(),
     getLocalBusinessSchema(),
+    getPersonSchema(),
     ...getTeamSchemas(),
     getBreadcrumbSchema([{ name: "Start", url: siteConfig.url }]),
-    getFaqSchemaFromItems(),
-    getImageGallerySchema(),
   ];
 }

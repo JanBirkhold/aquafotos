@@ -6,10 +6,10 @@ import { getBreadcrumbSchema } from "@/lib/schema";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Login – Veranstaltungszugang",
-  description:
-    "Login für AquaFotos Veranstaltungen: Mit Passwort Vorschaubilder ansehen und Unterwasserfotos online bestellen.",
+  title: "Login – AquaFotos",
+  description: "Login-Bereich für AquaFotos. Neue Anbindung folgt in Kürze.",
   path: "/login",
+  noIndex: true,
 });
 
 export default function LoginPage() {

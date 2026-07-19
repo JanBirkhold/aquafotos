@@ -1,60 +1,64 @@
-import type { PartnerType } from "@prisma/client";
+export type PartnerType = "SWIMMING_POOL" | "KITA" | "MIDWIFE" | "FAMILY_CENTER" | "OTHER";
 
 export const partnerHero = {
   headline: "Partner werden",
   subline:
-    "Mehrwert für Ihre Teilnehmer – ohne Aufwand für Sie. Wir übernehmen Anmeldung, Galerie, Shop und Abwicklung.",
-  ctaPrimary: "Termin anfragen",
-  ctaSecondary: "So funktioniert's",
+    "Mehrwert für Familien in Barntrup, Detmold, Lage, Bad Salzuflen und ganz Lippe / OWL – ohne Verwaltungsaufwand für Ihr Team. Wir planen Termine, fotografieren vor Ort und kümmern uns um Galerie und Bildbestellung.",
+  ctaPrimary: "Unverbindlich anfragen",
+  ctaSecondary: "So funktioniert’s",
 };
 
 export const partnerPillars = [
   {
-    id: "anmeldung",
-    title: "Anmeldung",
+    id: "termin",
+    title: "Termin & Aushang",
     description:
-      "Online-Anmeldung mit QR-Codes, Wartelisten und Bestätigungs-Mails – ohne Excel-Listen oder Telefon-Pingpong.",
+      "Gemeinsam legen wir Datum und Rahmen fest. Sie erhalten Text und QR-Code für Aushänge – Familien scannen und melden sich direkt bei uns.",
+  },
+  {
+    id: "anmeldung",
+    title: "Anmeldung bei uns",
+    description:
+      "WhatsApp, Telefon oder E-Mail – wir nehmen Anmeldungen entgegen und halten die Teilnehmerliste. Kein Excel und keine Wartelisten-Software für Sie.",
+  },
+  {
+    id: "shooting",
+    title: "Shooting vor Ort",
+    description:
+      "Wir kommen mit Kamera und Ablaufplan. Sie stellen Raum bzw. Becken – der Rest läuft über AquaFotos.",
   },
   {
     id: "galerie",
-    title: "Galerie",
+    title: "Galerie & Bestellung",
     description:
-      "Persönliche Galerie pro Teilnehmer mit Wasserzeichen-Vorschau, Favoriten und sicherem Zugang per Code.",
-  },
-  {
-    id: "shop",
-    title: "Shop",
-    description:
-      "Transparenter Bildershop mit Staffelpreisen – Familien wählen selbst, Sie müssen nicht verkaufen.",
-  },
-  {
-    id: "abwicklung",
-    title: "Abwicklung",
-    description:
-      "Bestellstatus, Bearbeitung, Download und Benachrichtigungen – komplett durch uns, DSGVO-konform.",
+      "Nach dem Shooting erhalten Familien ihren Galerie-Zugang per E-Mail, wählen Bilder und zahlen per Überweisung. Verkauf und Support übernehmen wir.",
   },
 ] as const;
 
 export const partnerSteps = [
   {
     step: 1,
-    title: "Kurzes Kennenlernen",
-    description: "Wir besprechen Zielgruppe, Termin und Rahmen – 15 Minuten reichen oft.",
+    title: "Kennenlernen",
+    description:
+      "Kurzes Gespräch zu Zielgruppe, Termin und Ort – unverbindlich per Mail oder Telefon.",
   },
   {
     step: 2,
-    title: "Wir organisieren",
-    description: "Shooting-Planung, Kommunikation an Ihre Teilnehmer und technische Einrichtung.",
+    title: "Termin & QR-Material",
+    description:
+      "Wir fixieren den Termin und liefern Aushang-Text plus QR-Code (Link zu Termin/Kontakt). Sie hängen aus – fertig.",
   },
   {
     step: 3,
-    title: "Teilnehmer melden sich an",
-    description: "Digitale Anmeldung mit QR-Code – ohne Aufwand in Ihrer Verwaltung.",
+    title: "Familien melden sich an",
+    description:
+      "Anmeldung läuft bei uns: WhatsApp, Telefon oder E-Mail. Sie müssen keine Listen führen und nichts verkaufen.",
   },
   {
     step: 4,
-    title: "Fertig – Sie lehnen sich zurück",
-    description: "Galerie, Verkauf und Auslieferung laufen bei uns. Sie bieten Premium-Mehrwert.",
+    title: "Shooting & Nachbereitung",
+    description:
+      "Wir fotografieren, richten die Galerie ein und wickeln Bestellungen ab. Sie bieten Premium-Mehrwert ohne Extra-Personal.",
   },
 ] as const;
 
@@ -64,14 +68,14 @@ export const partnerBenefits = {
     "Professionelles Angebot ohne eigene Fotografen-Suche",
     "Zufriedene Familien = positives Image für Ihre Einrichtung",
     "Flexible Formate: Unterwasser, Kita, Baby, Familie",
-    "Auf Wunsch mit Ihrem Logo auf der Partner-Seite",
+    "Sichtbarkeit als Partner auf aquafotos.com – Region Lippe / OWL",
   ],
   weHandle: [
-    "Terminplanung & Kapazitätsmanagement",
-    "Teilnehmer-Anmeldung inkl. E-Mail-Bestätigung",
-    "QR-Codes & Galerie-Zugang",
-    "Warenkorb, Preise & Bestellabwicklung",
-    "Bildbearbeitung, Download & Support für Kunden",
+    "Terminplanung und Kommunikation mit den Familien",
+    "QR-Code & Aushang-Text für Ihre Räume",
+    "Anmeldung per WhatsApp, Telefon und E-Mail",
+    "Shooting vor Ort inkl. Ablauf am Becken/Raum",
+    "Galerie-Zugang, Bildbestellung und Support für Kunden",
   ],
 } as const;
 
@@ -86,37 +90,37 @@ export const partnerSegments: PartnerSegment[] = [
   {
     type: "SWIMMING_POOL",
     title: "Schwimmbäder & Thermen",
-    hook: "Ein Erlebnis, das Besucher bindet – ohne Extra-Personal am Beckenrand.",
+    hook: "Ein Erlebnis für Familien aus Detmold, Lage und Bad Salzuflen – ohne Extra-Personal am Beckenrand.",
     benefits: [
       "Emotionale Unterwasserbilder als Alleinstellungsmerkmal",
-      "Komplette Abwicklung ohne Kassen- oder Verkaufsstand",
-      "Termin-Shootings statt dauernder Fotografen-Präsenz",
+      "Keine Verkaufsstände oder Kassenabwicklung für Fotos",
+      "Feste Event-Termine statt dauernder Fotografen-Präsenz",
     ],
   },
   {
     type: "KITA",
     title: "Kitas & Kindergärten",
-    hook: "Moderne Kita-Fotografie ohne Mappenverkauf und ohne Chaos am Elternabend.",
+    hook: "Moderne Kita-Fotografie in Lippe / OWL – ohne Mappenverkauf und ohne Chaos am Elternabend.",
     benefits: [
-      "Eltern bestellen digital – kein Druck auf Erzieher:innen",
-      "DSGVO-konforme Galerie mit Einzelzugang",
+      "Eltern bestellen selbst – kein Druck auf Erzieher:innen",
+      "Klare Anmeldung und Galerie-Zugang über uns",
       "Einheitlicher Look, professionelle Bearbeitung",
     ],
   },
   {
     type: "MIDWIFE",
     title: "Hebammen & Praxen",
-    hook: "Emotionale Begleitung von Schwangerschaft bis Baby – mit passendem Fotoangebot.",
+    hook: "Emotionale Begleitung von Schwangerschaft bis Baby – mit passendem Fotoangebot vor Ort.",
     benefits: [
       "Gutscheine & Shootings als Zusatzservice",
       "Vertrauensvolle Ansprache Ihrer Klientinnen",
-      "Kein eigener Shop nötig",
+      "Kein eigener Verkaufsprozess nötig",
     ],
   },
   {
     type: "FAMILY_CENTER",
     title: "Familienzentren",
-    hook: "Premium-Fotografie als Kooperationsangebot – wir liefern die Infrastruktur.",
+    hook: "Premium-Fotografie als Kooperationsangebot in Barntrup, Detmold und Umgebung.",
     benefits: [
       "Attraktives Programm für Familien im Quartier",
       "Gemeinsame Sichtbarkeit auf aquafotos.com/partner",
@@ -124,3 +128,15 @@ export const partnerSegments: PartnerSegment[] = [
     ],
   },
 ];
+
+/** Kurzfassung für die Startseite */
+export const partnerHomeTeaser = {
+  eyebrow: "Für Einrichtungen in Lippe / OWL",
+  headline: "Partner werden",
+  text: "Schwimmbad, Kita oder Familienzentrum in Barntrup, Detmold, Lage oder Bad Salzuflen? Wir bringen Unterwasser- und Familienfotografie zu Ihnen – mit QR-Aushang, Anmeldung bei uns und kompletter Nachbereitung.",
+  points: [
+    "QR-Code zum Aushängen → Anmeldung bei AquaFotos",
+    "Shooting vor Ort – Sie stellen nur den Raum",
+    "Galerie & Bildbestellung komplett über uns",
+  ],
+} as const;

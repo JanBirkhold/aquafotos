@@ -3,9 +3,8 @@ import {
   CalendarCheck,
   Camera,
   CheckCircle2,
-  ClipboardList,
   Handshake,
-  ShoppingBag,
+  QrCode,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -15,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   partnerBenefits,
   partnerHero,
+  partnerHomeTeaser,
   partnerPillars,
   partnerSegments,
   partnerSteps,
@@ -23,10 +23,10 @@ import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 const pillarIcons = {
-  anmeldung: ClipboardList,
-  galerie: Camera,
-  shop: ShoppingBag,
-  abwicklung: CalendarCheck,
+  termin: QrCode,
+  anmeldung: Handshake,
+  shooting: Camera,
+  galerie: CalendarCheck,
 } as const;
 
 export function PartnerBecomeHero() {
@@ -51,7 +51,8 @@ export function PartnerBecomeHero() {
           </Button>
         </div>
         <p className="mt-6 text-sm text-slate-500">
-          Schwimmbäder · Kitas · Hebammen · Familienzentren in OWL & Umgebung
+          Schwimmbäder · Kitas · Hebammen · Familienzentren in Barntrup, Detmold,
+          Lage, Bad Salzuflen & OWL
         </p>
       </div>
     </section>
@@ -64,11 +65,11 @@ export function PartnerPillarsSection() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-3xl font-bold text-aqua-900">
-            Alles aus einer Hand
+            Was wir für Sie übernehmen
           </h2>
           <p className="mt-3 text-slate-600">
-            Sie stellen den Raum und Ihre Zielgruppe – wir liefern die komplette
-            Fotografie-Infrastruktur.
+            Sie stellen Raum und Zielgruppe – Anmeldung, Shooting und Bildverkauf
+            laufen über AquaFotos. Kein Online-Shop und kein Admin-System für Ihr Team.
           </p>
         </div>
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -107,8 +108,9 @@ export function PartnerProcessSection() {
             So läuft die Partnerschaft
           </h2>
           <p className="mt-3 text-slate-600">
-            Vier Schritte – danach haben Sie ein fertiges Premium-Angebot, ohne
-            laufenden Verwaltungsaufwand.
+            Vier Schritte – QR zum Aushängen, Anmeldung bei uns, Shooting vor Ort,
+            Galerie danach. Ohne Wartelisten-Software und ohne Warenkorb-Management
+            für Ihre Einrichtung.
           </p>
         </div>
         <ol className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -241,11 +243,11 @@ export function PartnerInquirySection() {
       <div className="mx-auto max-w-xl">
         <div className="text-center">
           <h2 className="font-display text-3xl font-bold text-aqua-900">
-            Termin anfragen
+            Unverbindlich anfragen
           </h2>
           <p className="mt-3 text-slate-600">
-            Unternehmen, Ort und E-Mail – wir melden uns mit einem unverbindlichen
-            Terminvorschlag. Kein Telefon, kein langes Formular.
+            Unternehmen, Ort und E-Mail – wir melden uns mit einem Terminvorschlag.
+            Kein langes Formular, kein Login.
           </p>
         </div>
         <div className="mt-8">
@@ -262,11 +264,12 @@ export function PartnerCtaSection() {
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="font-display text-3xl font-bold">Noch Fragen?</h2>
         <p className="mt-4 text-lg text-aqua-100">
-          Rufen Sie uns an – wir erklären den Ablauf in wenigen Minuten.
+          Rufen Sie uns an – wir erklären QR-Aushang, Anmeldung und Ablauf in wenigen
+          Minuten.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" variant="secondary">
-            <Link href="#partner-anfrage">Termin per E-Mail anfragen</Link>
+            <Link href="#partner-anfrage">Anfrage per E-Mail</Link>
           </Button>
           <Button
             asChild
@@ -279,6 +282,61 @@ export function PartnerCtaSection() {
             </Link>
           </Button>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/** Kompakte Partner-werden-Sektion für die Startseite */
+export function PartnerBecomeHomeSection() {
+  const t = partnerHomeTeaser;
+  return (
+    <section
+      aria-labelledby="partner-home-heading"
+      className="section-padding bg-gradient-to-br from-aqua-800 to-aqua-950 text-white"
+    >
+      <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-aqua-200">
+            {t.eyebrow}
+          </p>
+          <h2
+            id="partner-home-heading"
+            className="mt-2 font-display text-3xl font-bold sm:text-4xl"
+          >
+            {t.headline}
+          </h2>
+          <p className="mt-4 text-lg leading-relaxed text-aqua-100">{t.text}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg" variant="secondary">
+              <Link href="/partner#partner-anfrage">Jetzt anfragen</Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-transparent text-white hover:bg-white/10"
+            >
+              <Link href="/partner#ablauf">Ablauf ansehen</Link>
+            </Button>
+          </div>
+        </div>
+        <ul className="space-y-4">
+          {t.points.map((point, i) => (
+            <li
+              key={point}
+              className="flex gap-4 rounded-2xl border border-white/15 bg-white/5 px-5 py-4 backdrop-blur-sm"
+            >
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-aqua-500 text-sm font-bold"
+                aria-hidden
+              >
+                {i + 1}
+              </span>
+              <p className="text-sm leading-relaxed text-aqua-50 sm:text-base">{point}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

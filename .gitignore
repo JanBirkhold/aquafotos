@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# portfolio (generated screenshots / PDF / HTML)
+/docs/portfolio/screenshots/
+/docs/portfolio/portfolio.html
+/docs/portfolio/*.pdf
+
+# local video encode backup
+/public/images/Hero-video.orig.mp4

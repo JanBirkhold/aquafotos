@@ -58,7 +58,7 @@ export function ServicePageTemplate({ service }: ServicePageTemplateProps) {
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2">
           <div>
             <h2 className="font-display text-2xl font-bold text-aqua-900">
-              Ihre Herausforderungen
+              Was viele Eltern kennen
             </h2>
             <ul className="mt-4 space-y-3">
               {service.problems.map((p) => (
@@ -76,8 +76,8 @@ export function ServicePageTemplate({ service }: ServicePageTemplateProps) {
               </p>
               <p className="mt-4 text-slate-600">
                 AquaFotos begleitet Sie persönlich – von der Anmeldung bis zur
-                fertigen Galerie. Keine freien Kalenderbuchungen, sondern
-                durchdachte Events mit klarer Terminlogik.
+                fertigen Galerie. Feste Events in Lippe / OWL mit klarer
+                Terminlogik, Anmeldung per WhatsApp, Telefon oder E-Mail.
               </p>
             </CardContent>
           </Card>
